@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "StudyBuddy",
+  "version": "0.1.0",
+  "description": "A retro digital side-kick for focused study sessions.",
+  "action": {
+    "default_title": "Open StudyBuddy",
+    "default_popup": "index.html"
+  },
+  "permissions": ["storage", "tabs"]
+}
