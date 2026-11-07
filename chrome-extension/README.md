@@ -1,30 +1,27 @@
-# Desktop Companion Chrome v2.3 — KO state and active HP recovery
+# StudyBuddy Companion 3.3 — Quest Board
 
-## Features
-- Approved v2.2 walking + idle sprites and shared HP/EXP.
-- New static KO sprite when HP reaches 0; the mascot no longer walks, falls, or responds to dragging until **Restore health** is clicked in extension popup.
-- HP: maximum 50, hidden numerical value.
-- Random mascot idle drains 1 HP every 3 seconds after an uninterrupted 15-second idle grace period (first loss at ~18s).
-- **Sustained, real keyboard/mouse activity** in the active focused tab heals 1 HP every 3 seconds after a 5-second activity streak (first gain at ~8s). Inactivity breaks the streak. A zero-HP mascot requires explicit restore rather than auto-revival.
-- One Chrome-profile-local health/EXP record shared by all tabs; no multi-device syncing or single cross-browser process.
-- No access to typed text, just activity-event timestamps; these are not saved.
+The Chrome extension retains your custom sprite mascot, health, drag & drop, animation, settings cog and quick-tip chat.
 
-## Install
-1. Extract ZIP.
-2. Open `chrome://extensions`, enable Developer mode, then **Load unpacked**. Select this folder.
-3. Under Details, set Site access to **On all sites**.
-4. Disable older mascot versions to prevent overlapping characters.
-5. Reload existing websites, including YouTube, after installing.
+## Quests
+- Add up to **3 queued tasks**, each with a title and **1–240 minute** duration.
+- **Start Session** activates the current task's timer and displays the mascot on webpages.
+- **Pause** stops the timer, hides the mascot and suspends health and EXP updates.
+- **Finished** removes the current task, grants **25 EXP**, and pauses until you explicitly start the next task.
+- **50 EXP per level**; EXP rolls over and increments Level.
+- Timers, tasks, HP, EXP and settings are shared in `chrome.storage.local` across tabs in the same Chrome profile.
+- The countdown can reach zero without automatically marking a task complete; press Finished when it is actually done.
+- At 0 HP the mascot shows its KO sprite and stays still until restored using Settings.
+- Health follows the existing idle/activity rule **only while a task session is running**.
 
-## YouTube troubleshooting
-- Site access must include `https://www.youtube.com/*` (On all sites works).
-- YouTube changes pages via in-app navigation; injected content may be hidden beneath fullscreen videos or require page refresh.
-- Check Console for `[Desktop Companion] Content script active; mascot created.`
-- If it appears in DOM but not visible, it may be affected by site-level overlays and stacking context; normal HTML content scripts cannot appear over fullscreen video.
-- Protected browser pages, Chrome Web Store and some browser special pages are restricted.
+## Installation
+1. Extract the ZIP.
+2. Open `chrome://extensions`. Enable Developer mode.
+3. Click **Load unpacked** and select the extracted project folder.
+4. Allow site access if prompted. Refresh your websites. Chrome's own pages are restricted.
 
-## Persistence and limits
-Data is saved in `chrome.storage.local`, shared across tabs only for the same extension ID in a single Chrome profile. Installing a separate unpacked extension may start new data. Cross-browser syncing needs a cloud backend and browser-specific extension packages.
+Disable any previous StudyBuddy extension to avoid multiple mascots. For preserving an existing extension's storage, replace its unpacked files **in the same folder** and click Reload instead of loading a separate folder.
 
 ## Notes
-This build has passed syntax and package checks; live Chrome behavior remains to be tested.
+- No remote servers, tracking or AI service; the Buddy chat provides scripted study prompts.
+- If Chrome sleeps or suspends a tab, the timer is based on its stored deadline and catches up when resumed.
+- Browser-only mascot: Chrome extensions cannot draw outside Chrome webpages.

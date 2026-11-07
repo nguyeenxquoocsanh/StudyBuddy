@@ -29,6 +29,8 @@
   let animationId = 0;
   let hiddenForTab = false;
   const statsKey = "petStatsV2";
+  const studyKey = "studyBuddyV2";
+  let sessionRunning = false;
   let petStats = { hp: 50, maxHp: 50, xp: 0, xpNext: 100, level: 1 };
   let lastBehaviorReport = 0;
   let lastActivityAt = 0;
@@ -204,7 +206,7 @@
   function sendBehavior(now) {
     if (now - lastBehaviorReport < 1000) return;
     lastBehaviorReport = now;
-    const visible = document.visibilityState === "visible" && document.hasFocus() && settings.enabled && !settings.paused && !hiddenForTab;
+    const visible = document.visibilityState === "visible" && document.hasFocus() && settings.enabled && !settings.paused && !hiddenForTab && sessionRunning;
     const continuousActivity = document.hasFocus() && Date.now() - lastActivityAt < ACTIVE_RECENT_MS
       && activityEvents >= 2 && firstActivityAt > 0
       && !isKo;
@@ -221,7 +223,7 @@
     pet.style.transform = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0) scale(${scale()})`;
   }
   function applyVisibility() {
-    const visible = settings.enabled && !hiddenForTab;
+    const visible = settings.enabled && !hiddenForTab && sessionRunning;
     pet.style.display = visible ? "block" : "none";
     if (!visible) menu.hidden = true;
   }
@@ -249,7 +251,7 @@
   }
   function tick() {
     ticks++;
-    if (isKo || dragging || settings.paused || !settings.enabled || hiddenForTab) return;
+    if (isKo || dragging || settings.paused || !settings.enabled || hiddenForTab || !sessionRunning) return;
     // Lock to viewport ground, independent of scrolling and page layout.
     const ground = groundY();
     if (y < ground) {
@@ -299,7 +301,7 @@
   }
   function point(event) { return { x: event.clientX, y: event.clientY }; }
   function down(event) {
-    if (isKo || event.button !== 0 || !settings.enabled) return;
+    if (isKo || event.button !== 0 || !settings.enabled || !sessionRunning) return;
     event.preventDefault();
     menu.hidden = true;
     const p = point(event);
@@ -382,6 +384,15 @@
     }
     if (changes.resetRequest) reset();
     if (changes[statsKey]) acceptStats(changes[statsKey].newValue);
+    if (changes[studyKey]) {
+      const next = changes[studyKey].newValue;
+      const nextRunning = Boolean(next?.running && next?.endAt>Date.now());
+      if(nextRunning!==sessionRunning){
+        sessionRunning=nextRunning;
+        dragging=false;press=null;menu.hidden=true;
+        if(sessionRunning)reset();
+      }
+    }
     x = clamp(x, 0, maxX());
     y = clamp(y, 0, groundY());
     applyVisibility();
@@ -390,6 +401,20 @@
   chrome.runtime.sendMessage({ type: "pet:read" })
     .then(response => { if (response?.stats) acceptStats(response.stats); })
     .catch(() => {});
+  chrome.storage.local.get(studyKey).then(data=>{
+    const record=data[studyKey];
+    sessionRunning=Boolean(record?.running && record?.endAt>Date.now());
+    if(sessionRunning)reset();
+    applyVisibility();
+  }).catch(()=>{});
+  // Guard against stale running state if the timer expires while the popup is closed.
+  setInterval(()=>{
+    chrome.storage.local.get(studyKey).then(data=>{
+      const record=data[studyKey];
+      const next=Boolean(record?.running && record?.endAt>Date.now());
+      if(next!==sessionRunning){sessionRunning=next;if(next)reset();applyVisibility();}
+    }).catch(()=>{});
+  },2000);
   renderBars();
   applyVisibility();
   reset();
