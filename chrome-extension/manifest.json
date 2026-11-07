@@ -1,22 +1,30 @@
 {
   "manifest_version": 3,
-  "name": "Desktop Companion \u2014 Shared Pet",
-  "short_name": "Web Companion",
-  "description": "Shared HP/EXP, KO state, browser activity recovery, walking mascot.",
-  "version": "2.3.0",
+  "name": "StudyBuddy Companion",
+  "short_name": "StudyBuddy",
+  "description": "Study quests with a 3-task queue, 50-point EXP levels, focus-gated desktop mascot, and shared health.",
+  "version": "3.3.0",
+  "action": {
+    "default_title": "StudyBuddy Companion",
+    "default_popup": "index.html"
+  },
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "action": {
-    "default_title": "Web Companion settings",
-    "default_popup": "popup.html"
-  },
   "permissions": [
-    "storage"
+    "storage",
+    "tabs",
+    "alarms"
   ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [
@@ -39,11 +47,5 @@
         "https://*/*"
       ]
     }
-  ],
-  "background": {
-    "service_worker": "background.js"
-  },
-  "host_permissions": [
-    "<all_urls>"
   ]
 }

@@ -1,0 +1,37 @@
+:root {color-scheme:dark;--ink:#e9fff7;--muted:#91ada8;--bg:#10191c;--panel:#172528;--line:#2c4748;--green:#63e6be;--pink:#ff6d8d;--yellow:#ffd166}
+*{box-sizing:border-box}
+body{margin:0;width:420px;max-height:590px;overflow-y:auto;background:var(--bg);color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+body::before{position:fixed;inset:0;z-index:-1;opacity:.14;background-image:linear-gradient(#365354 1px,transparent 1px),linear-gradient(90deg,#365354 1px,transparent 1px);background-size:24px 24px;content:""}
+.app{padding:20px 22px 17px}
+.topbar,.brand,.live,.top-actions,.card-heading,.chat-heading,.timer-meta,.stats,footer{display:flex;align-items:center}
+.topbar{justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:13px}.brand{gap:9px;letter-spacing:.12em;font-size:12px;font-weight:600}.brand-mark{display:grid;width:28px;height:28px;place-items:center;border:2px solid var(--green);color:var(--green);font-size:10px}
+.top-actions{gap:14px}.live{gap:7px;color:var(--green);font-size:10px;letter-spacing:.06em}.live i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}.icon-button{width:32px;height:32px;display:grid;place-items:center;padding:0;border:1px solid var(--line);background:var(--panel);color:var(--green)}.icon-button[aria-expanded="true"]{background:#25413b}
+button{cursor:pointer;font:600 11px ui-monospace,Menlo,Consolas,monospace}button:focus-visible,input:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.45}
+.hero{display:flex;min-height:150px;align-items:center;justify-content:space-between;gap:16px}.eyebrow{margin:0 0 8px;color:var(--green);font-size:10px;letter-spacing:.10em}h1,h2,p{margin-top:0}h1{margin-bottom:10px;font-family:system-ui,sans-serif;font-size:30px;line-height:1;letter-spacing:-.05em}h2{margin:0;font-family:system-ui,sans-serif;font-size:17px;font-weight:650}.subhead{color:var(--muted);font-size:11px;line-height:1.55}
+.mascot-frame{width:114px;height:118px;flex:none;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line);background:#1d2b2d}.mascot-frame img{width:106px;height:110px;object-fit:contain;image-rendering:auto}
+.pet-bars{border:1px solid var(--line);padding:12px 14px;margin-bottom:14px;background:#142124}.meter-caption{display:flex;justify-content:space-between;margin-bottom:6px;color:var(--muted);font-size:9px;font-weight:600;letter-spacing:.09em}.meter-caption span:last-child{color:var(--green)}.meter{height:9px;background:#0c1517;overflow:hidden;border:1px solid #304144}.meter>div{width:0;height:100%;transition:width .2s}.meter.hp>div{background:var(--pink)}
+.focus-card,.chat-card{border:1px solid var(--line);background:#142124;box-shadow:4px 4px 0 #0b1113}.focus-card{padding:17px}.card-heading,.chat-heading{justify-content:space-between}.status-chip,.chat-badge{border:1px solid var(--green);padding:5px 7px;color:var(--green);font-size:9px}.status-chip.active{border-color:var(--pink);color:var(--pink)}.timer{margin:17px 0 12px;font-size:49px;letter-spacing:-.08em}.progress{height:7px;overflow:hidden;background:#0c1517}.progress span{display:block;width:0;height:100%;background:var(--green)}.timer-meta{justify-content:space-between;margin-top:8px;color:var(--muted);font-size:9px}.actions{display:flex;gap:10px;margin-top:16px}.primary,.secondary{padding:11px 13px;border:0}.primary{background:var(--green);color:#0d1d1b}.secondary{border:1px solid var(--line);background:transparent;color:var(--ink)}
+.stats{gap:8px;margin:14px 0}.single-stat{display:block}.stat{flex:1;padding:11px 9px;border:1px solid var(--line)}.single-stat .stat{width:100%}.stat span{display:block;margin-bottom:7px;color:var(--muted);font-size:9px}.stat strong{font-size:12px}.stat b{color:var(--green)}
+.chat-card{padding:15px 17px 17px}.chat-log{min-height:45px;max-height:105px;overflow-y:auto;margin:13px 0 10px;color:var(--muted);font-size:11px;line-height:1.5}.chat-log p{margin:0 0 7px}.chat-log b{color:var(--green)}.chat-log .you b{color:var(--yellow)}.chat-form{display:flex;border:1px solid var(--line)}.chat-form input{width:100%;min-width:0;border:0;padding:11px;outline:none;color:var(--ink);background:transparent;font:11px ui-monospace,monospace}.chat-form button{width:40px;border:0;color:var(--green);background:transparent;font-size:18px}footer{justify-content:space-between;margin-top:17px;color:#75908b;font-size:9px}
+[hidden]{display:none!important}#settings-panel{padding-top:22px}.settings-heading{margin-bottom:18px}.settings-heading h2{margin-bottom:7px}.setting-row,.setting-label{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:17px 0;font-size:12px}.setting-row{padding:6px 0;border-bottom:1px solid var(--line)}input[type=checkbox]{width:18px;height:18px;accent-color:var(--green)}input[type=range]{display:block;width:100%;accent-color:var(--green);margin:-6px 0 19px}.setting-label output{color:var(--green)}.settings-actions{display:grid;gap:9px;margin-top:24px}.settings-actions button{width:100%}.settings-note{color:var(--muted);font-size:10px;line-height:1.6;margin:15px 0}.back-button{margin-top:10px;width:100%}
+
+/* Quest queue v3.3 */
+.quest-queue{border:1px solid var(--line);padding:16px 17px;margin-bottom:14px;background:#142124;box-shadow:4px 4px 0 #0b1113}
+.queue-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:17px}
+.queue-heading h2{font-size:16px;max-width:290px;line-height:1.25}
+#queue-count{color:var(--green);font-size:10px;white-space:nowrap}
+.task-form{display:grid;gap:7px}.task-form>label,.task-form-bottom label{font-size:9px;letter-spacing:.09em;color:var(--muted)}
+.task-form input{min-width:0;width:100%;background:#0c1517;border:1px solid #304144;color:var(--ink);font:12px ui-monospace,monospace;padding:10px}
+.task-form-bottom{display:grid;grid-template-columns:auto 62px 1fr;align-items:center;gap:9px;margin-top:3px}
+.task-form-bottom input{padding:10px 5px;text-align:center}.task-form-bottom button{min-width:0;padding:11px 8px}
+.task-list{list-style:none;display:grid;gap:7px;margin:14px 0 0;padding:0}
+.task-list li{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);background:#101b1d}
+.task-list li.current{border-color:var(--green)}
+.task-number{font-size:10px;color:var(--green);min-width:18px}
+.task-details{flex:1;min-width:0}.task-details strong{display:block;font-size:11px;white-space:normal;overflow-wrap:anywhere}.task-details small{font-size:9px;color:var(--muted)}
+.task-remove{border:1px solid var(--line);padding:4px 8px;background:transparent;color:var(--muted)}
+.empty-queue{font-size:11px;color:var(--muted);padding:9px 0}
+.queue-message{min-height:0;margin:7px 0 0;color:var(--yellow);font-size:10px}
+.actions{gap:6px}.actions button{flex:1;font-size:10px;padding:11px 6px;white-space:nowrap}
+.finished{border:1px solid var(--yellow);background:#2d2a1e;color:var(--yellow)}
+.xp-label{margin-top:11px}.meter.experience>div{background:#5ba9f6}
