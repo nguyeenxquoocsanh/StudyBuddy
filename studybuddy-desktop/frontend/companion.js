@@ -10,6 +10,7 @@ const SPRITES = {
 };
 const WINDOW_WIDTH = 300;
 const WINDOW_HEIGHT = 340;
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 let bounds;
 let state = null;
 let behavior = "idle";
@@ -75,7 +76,9 @@ function renderBars() {
   const pet = state?.pet;
   if (!pet) return;
   $("hp-fill").style.width = `${100 * pet.hp / Math.max(1, pet.maxHp)}%`;
+  $("hp-fill").parentElement.setAttribute("aria-valuenow", String(pet.hp));
   $("xp-fill").style.width = `${100 * pet.xp / Math.max(1, pet.xpNext)}%`;
+  $("xp-fill").parentElement.setAttribute("aria-valuenow", String(pet.xp));
 }
 
 function maxX() {
@@ -182,6 +185,12 @@ function animate() {
       || state.settings.paused || dragging || state.pet.hp <= 0) {
     if (state?.pet?.hp <= 0 && spriteState() !== "dead") setSprite();
     behavior = state?.pet?.hp <= 0 ? "dead" : "idle";
+    return;
+  }
+  if (reducedMotion.matches) {
+    behavior = "idle";
+    frame = 0;
+    setSprite();
     return;
   }
   const now = Date.now();

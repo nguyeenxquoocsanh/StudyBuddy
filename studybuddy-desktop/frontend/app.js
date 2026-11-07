@@ -7,6 +7,7 @@ const TASK_LIMIT = 3;
 const MAX_XP = 50;
 const MAX_HP = 50;
 const tauri = window.__TAURI__;
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 function createDefaultState() {
   return {
@@ -200,8 +201,10 @@ function loadState() {
 function renderPet() {
   const { hp, maxHp, xp, level } = state.pet;
   $("hp-fill").style.width = `${100 * hp / Math.max(maxHp, 1)}%`;
+  $("hp-fill").parentElement.setAttribute("aria-valuenow", String(hp));
   $("pet-condition").textContent = hp <= 0 ? "KO" : hp < 15 ? "LOW" : "HEALTHY";
   $("xp-fill").style.width = `${100 * xp / MAX_XP}%`;
+  $("xp-fill").parentElement.setAttribute("aria-valuenow", String(xp));
   $("level-label").textContent = `LEVEL ${level}`;
   if (hp <= 0) {
     $("mascot-preview").src = "sprites/dead_0.png";
@@ -275,7 +278,9 @@ function renderStudy() {
   const remaining = remainingTime();
   const seconds = Math.ceil(remaining / 1000);
   $("timer").textContent = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-  $("progress").style.width = `${clamp(100 * (1 - remaining / duration), 0, 100)}%`;
+  const progress = clamp(100 * (1 - remaining / duration), 0, 100);
+  $("progress").style.width = `${progress}%`;
+  $("progress").parentElement.setAttribute("aria-valuenow", String(Math.round(progress)));
   $("quest-name").textContent = task?.title ?? "Add a task to begin";
   $("session-label").textContent = `${task?.minutes ?? 25} MIN FOCUS SESSION`;
   $("streak").textContent = `STREAK ${String(state.study.streak).padStart(2, "0")}`;
@@ -367,6 +372,7 @@ function removeTask(id) {
 }
 
 function startStudy() {
+  expireStudy();
   const task = currentTask();
   if (!task) {
     showMessage("Add a task first.", true);
@@ -383,12 +389,19 @@ function startStudy() {
 }
 
 function pauseStudy() {
+  if (expireStudy()) return;
   if (!state.study.running) return;
   state.study.remainingMs = Math.max(0, state.study.endAt - Date.now());
   state.study.running = false;
   state.study.endAt = 0;
+  penalizeInterruptedTask();
   clearHealthClocks();
-  commit();
+  commit("Paused quest: -10 HP and your focus streak reset.");
+}
+
+function penalizeInterruptedTask() {
+  state.pet.hp = Math.max(0, state.pet.hp - 10);
+  state.study.streak = 0;
 }
 
 function grantXp(amount) {
@@ -398,6 +411,7 @@ function grantXp(amount) {
 }
 
 function finishTask() {
+  expireStudy();
   const task = currentTask();
   if (!task) {
     showMessage("No task to finish.", true);
@@ -405,6 +419,10 @@ function finishTask() {
   }
   if (!state.study.started || (!state.study.running && remainingTime() > 0)) {
     showMessage("Start your quest before marking it Finished.", true);
+    return;
+  }
+  if (!state.study.running && state.study.remainingMs === 0) {
+    showMessage("This task timed out. Start it again to earn credit.", true);
     return;
   }
   state.study.tasks = state.study.tasks.filter((item) => item.id !== task.id);
@@ -535,15 +553,19 @@ async function connectCompanion() {
 }
 
 function tick() {
-  if (state.study.running && state.study.endAt <= Date.now()) {
-    state.study.running = false;
-    state.study.endAt = 0;
-    state.study.remainingMs = 0;
-    clearHealthClocks();
-    commit("Time is up! Press Finished when your task is done.");
-  } else {
-    renderStudy();
-  }
+  if (!expireStudy()) renderStudy();
+}
+
+function expireStudy() {
+  if (!state.study.running || state.study.endAt > Date.now()) return false;
+  state.study.running = false;
+  state.study.endAt = 0;
+  state.study.remainingMs = 0;
+  penalizeInterruptedTask();
+  clearHealthClocks();
+  addMessage("Buddy", "Time is up! You lost 10 HP and your focus streak reset. Start the task again when you are ready.");
+  commit("Time is up: -10 HP and your focus streak reset.");
+  return true;
 }
 
 $("settings-toggle").addEventListener("click", () => setSettingsView(!settingsOpen));
@@ -605,7 +627,7 @@ render();
 connectCompanion();
 setInterval(tick, 1000);
 setInterval(() => {
-  if (!settingsOpen && state.pet.hp > 0) {
+  if (!settingsOpen && state.pet.hp > 0 && !reducedMotion.matches) {
     const frame = Math.floor(Date.now() / 210) % 4;
     $("mascot-preview").src = `sprites/idle_${frame}.png`;
   }

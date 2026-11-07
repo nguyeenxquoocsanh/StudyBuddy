@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'"
     />
     <title>StudyBuddy</title>
     <link rel="stylesheet" href="styles.css" />
@@ -15,7 +15,7 @@
       <header class="topbar">
         <div class="brand"><span class="brand-mark">SB</span><span>STUDYBUDDY</span></div>
         <div class="top-actions">
-          <span class="live"><i></i> ONLINE</span>
+          <span class="live"><i></i> READY TO STUDY</span>
           <button id="settings-toggle" class="icon-button" type="button" aria-label="Open settings" title="Settings" aria-expanded="false" aria-controls="settings-panel">
             <svg class="hex-settings-icon" viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
               <path fill="#ffffff" fill-rule="evenodd" d="M6.4 2.5H17.6L23.2 12L17.6 21.5H6.4L0.8 12Z M12 7.3a4.7 4.7 0 1 0 0 9.4a4.7 4.7 0 1 0 0-9.4Z"/>
@@ -27,9 +27,9 @@
       <section id="dashboard">
         <section class="hero">
           <div>
-            <p class="eyebrow">DIGITAL SIDE-KICK // 01</p>
-            <h1>Stay in the zone.</h1>
-            <p class="subhead">Your tiny study companion is ready to help you lock in.</p>
+            <p class="eyebrow">YOUR STUDY SIDEKICK</p>
+            <h1>Little steps.<br />Big semester.</h1>
+            <p class="subhead">Pick one thing to work on. I’ll keep you company.</p>
           </div>
           <div class="mascot-frame" aria-label="StudyBuddy companion sprite">
             <img id="mascot-preview" src="sprites/idle_0.png" alt="Companion" />
@@ -37,24 +37,24 @@
         </section>
 
         <section class="pet-bars" aria-label="Companion health and experience">
-          <div class="meter-caption"><span>HEALTH</span><span id="pet-condition">HEALTHY</span></div>
-          <div class="meter hp" aria-label="Health bar"><div id="hp-fill"></div></div>
+          <div class="meter-caption"><span>BUDDY HEALTH</span><span id="pet-condition">HEALTHY</span></div>
+          <div class="meter hp" role="progressbar" aria-label="Buddy health" aria-valuemin="0" aria-valuemax="50" aria-valuenow="50"><div id="hp-fill"></div></div>
           <div class="meter-caption xp-label"><span>EXPERIENCE</span><span id="level-label">LEVEL 1</span></div>
-          <div class="meter experience" aria-label="Experience bar"><div id="xp-fill"></div></div>
+          <div class="meter experience" role="progressbar" aria-label="Experience toward next level" aria-valuemin="0" aria-valuemax="50" aria-valuenow="0"><div id="xp-fill"></div></div>
         </section>
 
         <section class="quest-queue">
           <div class="queue-heading">
-            <div><p class="eyebrow">QUEST BOARD</p><h2>What are you working on today?</h2></div>
-            <span id="queue-count">0 / 3</span>
+            <div><p class="eyebrow">YOUR LITTLE TO-DO LIST</p><h2>What’s on your mind?</h2></div>
+            <span id="queue-count" aria-label="Tasks in your queue">0 / 3</span>
           </div>
           <form id="task-form" class="task-form">
-            <label for="task-title">YOUR TASK</label>
-            <input id="task-title" type="text" maxlength="120" placeholder="e.g. Finish chapter 4" required />
+            <label for="task-title">ONE THING TO TACKLE</label>
+            <input id="task-title" type="text" maxlength="120" placeholder="e.g. Review biology notes" required />
             <div class="task-form-bottom">
               <label for="task-minutes">TIME (MIN)</label>
               <input id="task-minutes" type="number" min="1" max="240" value="25" required />
-              <button class="primary" id="add-task" type="submit">+ ADD TASK</button>
+              <button class="primary" id="add-task" type="submit">Add to my list <span aria-hidden="true">＋</span></button>
             </div>
           </form>
           <ol id="task-list" class="task-list" aria-label="Your queued tasks"></ol>
@@ -63,17 +63,18 @@
 
         <section class="focus-card">
           <div class="card-heading">
-            <div><p class="eyebrow">CURRENT QUEST</p><h2 id="quest-name">Add a task to begin</h2></div>
-            <span class="status-chip" id="status-chip">READY</span>
+            <div><p class="eyebrow">YOUR FOCUS SESSION</p><h2 id="quest-name">Add a task to begin</h2></div>
+            <span class="status-chip" id="status-chip" role="status">READY</span>
           </div>
-          <div class="timer" id="timer">25:00</div>
-          <div class="progress"><span id="progress"></span></div>
+          <div class="timer" id="timer" role="timer" aria-label="Time remaining">25:00</div>
+          <div class="progress" role="progressbar" aria-label="Focus session progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress"></span></div>
           <div class="timer-meta"><span id="session-label">25 MIN FOCUS SESSION</span><span id="streak">STREAK 00</span></div>
           <div class="actions">
-            <button class="primary" id="start" type="button">START SESSION</button>
-            <button class="secondary" id="pause" type="button">PAUSE</button>
-            <button class="finished" id="finish" type="button">FINISHED ✓</button>
+            <button class="primary" id="start" type="button">Let’s focus <span aria-hidden="true">→</span></button>
+            <button class="secondary" id="pause" type="button">Pause · −10 HP</button>
+            <button class="finished" id="finish" type="button">I’m finished ✓</button>
           </div>
+          <p class="focus-note">A pause or missed timer costs 10 health and resets your streak. It’s okay to try again.</p>
         </section>
 
         <section class="stats single-stat">
@@ -82,8 +83,8 @@
 
         <section class="chat-card">
           <div class="chat-heading">
-            <div><p class="eyebrow">BUDDY CHAT</p><h2>Need a nudge?</h2></div>
-            <span class="chat-badge">QUICK TIPS</span>
+            <div><p class="eyebrow">A NOTE FROM YOUR BUDDY</p><h2>Need a little nudge?</h2></div>
+            <span class="chat-badge">HERE FOR YOU</span>
           </div>
           <div class="chat-log" id="chat-log" role="log" aria-live="polite"><p class="buddy"><b>Buddy</b> Ask for a study plan or a break suggestion.</p></div>
           <form class="chat-form" id="chat-form">
@@ -91,7 +92,7 @@
             <button type="submit" aria-label="Send message">↗</button>
           </form>
         </section>
-        <footer><span>FOCUS MODE</span><span>SPACE TO START</span><span>v3.3</span></footer>
+        <footer><span>ONE STEP AT A TIME</span><span>SPACE TO START</span><span>STUDYBUDDY</span></footer>
       </section>
 
       <section id="settings-panel" hidden aria-label="Companion settings">
@@ -111,7 +112,8 @@
           <button class="secondary" id="reset" type="button">Reset position</button>
           <button class="primary" id="showNow" type="button">Show companion during quests</button>
         </div>
-        <p class="settings-note">The companion appears only while a quest is running. Pausing freezes the timer and health updates. Finishing a task awards 25 EXP and pauses the next quest. EXP levels up every 50 points.</p>
+        <p class="settings-note">The companion appears only while a quest is running. Pausing a quest costs 10 HP and resets your streak. Finishing a task awards 25 EXP and pauses the next quest. EXP levels up every 50 points.</p>
+        <p class="settings-note">If the timer reaches zero, you lose 10 HP and your streak resets. Restart the timed-out task before you can finish it for EXP.</p>
         <p class="settings-note">Health loses 1 HP every 3 seconds after 15 seconds of mascot idle, and regenerates after 5 seconds of sustained desktop activity. Windows reports only whether input was recent; StudyBuddy does not record keystrokes or their contents. At 0 HP, restore health to wake your companion.</p>
         <button class="secondary back-button" id="back-to-dashboard" type="button">← Back to dashboard</button>
       </section>
