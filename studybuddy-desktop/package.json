@@ -7,35 +7,14 @@
     "type": "git",
     "url": "https://github.com/nguyeenxquoocsanh/FallHack2026.git"
   },
-  "main": "main.js",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "start": "electron .",
-    "dist": "electron-builder --publish never"
+    "start": "tauri dev",
+    "build": "tauri build"
   },
   "devDependencies": {
-    "electron": "^45.2.3",
-    "electron-builder": "^26.18.0"
-  },
-  "build": {
-    "appId": "com.studybuddy.desktop",
-    "productName": "StudyBuddy",
-    "files": [
-      "app.js",
-      "index.html",
-      "main.js",
-      "preload.js",
-      "styles.css",
-      "mascot-sheet.jpeg",
-      "package.json"
-    ],
-    "directories": {
-      "output": "release"
-    }
-  },
-  "overrides": {
-    "minimatch": "^11.0.1"
+    "@tauri-apps/cli": "^2.0.0"
   }
 }

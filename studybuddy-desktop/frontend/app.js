@@ -129,8 +129,6 @@ document.addEventListener("keydown", (event) => {
   timerId ? pause() : start();
 });
 
-if (window.studyBuddy?.platform) {
-  buildLabel.textContent = `v0.1 // ${window.studyBuddy.platform.toUpperCase()} DESKTOP`;
-}
+buildLabel.textContent = "v0.1 // TAURI DESKTOP";
 load();
 render();
