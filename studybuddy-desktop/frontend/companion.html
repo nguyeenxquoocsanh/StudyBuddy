@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'"
+    />
+    <title>StudyBuddy Companion</title>
+    <link rel="stylesheet" href="companion.css" />
+  </head>
+  <body>
+    <main id="stage" aria-label="StudyBuddy desktop companion">
+      <div id="hud" aria-label="Health and experience">
+        <div class="meter"><div id="hp-fill"></div></div>
+        <div class="meter"><div id="xp-fill"></div></div>
+      </div>
+      <div id="pet" title="Drag me • Right-click for options">
+        <img id="sprite" src="sprites/idle_0.png" alt="StudyBuddy companion" draggable="false" />
+      </div>
+      <div id="menu" hidden>
+        <button type="button" data-action="pause-walking">Pause walking</button>
+        <button type="button" data-action="reset">Reset position</button>
+        <button type="button" data-action="hide">Hide for this quest</button>
+      </div>
+      <p id="overlay-error" role="status" hidden></p>
+    </main>
+    <script src="companion.js"></script>
+  </body>
+</html>

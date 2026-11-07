@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'"
     />
     <title>StudyBuddy</title>
     <link rel="stylesheet" href="styles.css" />
@@ -14,48 +14,107 @@
     <main class="app">
       <header class="topbar">
         <div class="brand"><span class="brand-mark">SB</span><span>STUDYBUDDY</span></div>
-        <span class="live"><i></i> ONLINE</span>
+        <div class="top-actions">
+          <span class="live"><i></i> ONLINE</span>
+          <button id="settings-toggle" class="icon-button" type="button" aria-label="Open settings" title="Settings" aria-expanded="false" aria-controls="settings-panel">
+            <svg class="hex-settings-icon" viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+              <path fill="#ffffff" fill-rule="evenodd" d="M6.4 2.5H17.6L23.2 12L17.6 21.5H6.4L0.8 12Z M12 7.3a4.7 4.7 0 1 0 0 9.4a4.7 4.7 0 1 0 0-9.4Z"/>
+            </svg>
+          </button>
+        </div>
       </header>
 
-      <section class="hero">
-        <div>
-          <p class="eyebrow">DIGITAL SIDE-KICK // 01</p>
-          <h1>Stay in the zone.</h1>
-          <p class="subhead">Your tiny study companion is ready to help you lock in.</p>
-        </div>
-        <div class="mascot-frame" aria-label="StudyBuddy mascot">
-          <div class="mascot"></div>
-        </div>
+      <section id="dashboard">
+        <section class="hero">
+          <div>
+            <p class="eyebrow">DIGITAL SIDE-KICK // 01</p>
+            <h1>Stay in the zone.</h1>
+            <p class="subhead">Your tiny study companion is ready to help you lock in.</p>
+          </div>
+          <div class="mascot-frame" aria-label="StudyBuddy companion sprite">
+            <img id="mascot-preview" src="sprites/idle_0.png" alt="Companion" />
+          </div>
+        </section>
+
+        <section class="pet-bars" aria-label="Companion health and experience">
+          <div class="meter-caption"><span>HEALTH</span><span id="pet-condition">HEALTHY</span></div>
+          <div class="meter hp" aria-label="Health bar"><div id="hp-fill"></div></div>
+          <div class="meter-caption xp-label"><span>EXPERIENCE</span><span id="level-label">LEVEL 1</span></div>
+          <div class="meter experience" aria-label="Experience bar"><div id="xp-fill"></div></div>
+        </section>
+
+        <section class="quest-queue">
+          <div class="queue-heading">
+            <div><p class="eyebrow">QUEST BOARD</p><h2>What are you working on today?</h2></div>
+            <span id="queue-count">0 / 3</span>
+          </div>
+          <form id="task-form" class="task-form">
+            <label for="task-title">YOUR TASK</label>
+            <input id="task-title" type="text" maxlength="120" placeholder="e.g. Finish chapter 4" required />
+            <div class="task-form-bottom">
+              <label for="task-minutes">TIME (MIN)</label>
+              <input id="task-minutes" type="number" min="1" max="240" value="25" required />
+              <button class="primary" id="add-task" type="submit">+ ADD TASK</button>
+            </div>
+          </form>
+          <ol id="task-list" class="task-list" aria-label="Your queued tasks"></ol>
+          <p id="queue-message" class="queue-message" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="focus-card">
+          <div class="card-heading">
+            <div><p class="eyebrow">CURRENT QUEST</p><h2 id="quest-name">Add a task to begin</h2></div>
+            <span class="status-chip" id="status-chip">READY</span>
+          </div>
+          <div class="timer" id="timer">25:00</div>
+          <div class="progress"><span id="progress"></span></div>
+          <div class="timer-meta"><span id="session-label">25 MIN FOCUS SESSION</span><span id="streak">STREAK 00</span></div>
+          <div class="actions">
+            <button class="primary" id="start" type="button">START SESSION</button>
+            <button class="secondary" id="pause" type="button">PAUSE</button>
+            <button class="finished" id="finish" type="button">FINISHED ✓</button>
+          </div>
+        </section>
+
+        <section class="stats single-stat">
+          <div class="stat"><span>MOOD</span><strong id="mood">READY</strong></div>
+        </section>
+
+        <section class="chat-card">
+          <div class="chat-heading">
+            <div><p class="eyebrow">BUDDY CHAT</p><h2>Need a nudge?</h2></div>
+            <span class="chat-badge">QUICK TIPS</span>
+          </div>
+          <div class="chat-log" id="chat-log" role="log" aria-live="polite"><p class="buddy"><b>Buddy</b> Ask for a study plan or a break suggestion.</p></div>
+          <form class="chat-form" id="chat-form">
+            <input id="chat-input" aria-label="Ask your companion" placeholder="Ask your side-kick..." autocomplete="off" />
+            <button type="submit" aria-label="Send message">↗</button>
+          </form>
+        </section>
+        <footer><span>FOCUS MODE</span><span>SPACE TO START</span><span>v3.3</span></footer>
       </section>
 
-      <section class="focus-card">
-        <div class="card-heading">
-          <div><p class="eyebrow">CURRENT QUEST</p><h2 id="quest-name">Biology review</h2></div>
-          <span class="status-chip" id="status-chip">READY</span>
+      <section id="settings-panel" hidden aria-label="Companion settings">
+        <div class="settings-heading">
+          <p class="eyebrow">PREFERENCES</p>
+          <h2>Companion settings</h2>
+          <p class="subhead">Tune your always-on-top desktop buddy.</p>
         </div>
-        <div class="timer" id="timer">25:00</div>
-        <div class="progress"><span id="progress"></span></div>
-        <div class="timer-meta"><span id="session-label">25 MIN FOCUS SESSION</span><span id="streak">STREAK 01</span></div>
-        <div class="actions">
-          <button class="primary" id="start">START SESSION</button>
-          <button class="secondary" id="pause">PAUSE</button>
+        <label class="setting-row"><span>Show companion during quests</span><input id="enabled" type="checkbox" checked /></label>
+        <label class="setting-row"><span>Pause walking</span><input id="paused" type="checkbox" /></label>
+        <label class="setting-label" for="speed"><span>Walking speed</span><output id="speedVal">1.5</output></label>
+        <input id="speed" type="range" min="0.4" max="5" step="0.1" value="1.5" />
+        <label class="setting-label" for="size"><span>Sprite size</span><output id="sizeVal">100%</output></label>
+        <input id="size" type="range" min="40" max="150" step="5" value="100" />
+        <div class="settings-actions">
+          <button class="secondary" id="restoreHp" type="button">Restore health</button>
+          <button class="secondary" id="reset" type="button">Reset position</button>
+          <button class="primary" id="showNow" type="button">Show companion during quests</button>
         </div>
+        <p class="settings-note">The companion appears only while a quest is running. Pausing freezes the timer and health updates. Finishing a task awards 25 EXP and pauses the next quest. EXP levels up every 50 points.</p>
+        <p class="settings-note">Health loses 1 HP every 3 seconds after 15 seconds of mascot idle, and regenerates after 5 seconds of sustained desktop activity. Windows reports only whether input was recent; StudyBuddy does not record keystrokes or their contents. At 0 HP, restore health to wake your companion.</p>
+        <button class="secondary back-button" id="back-to-dashboard" type="button">← Back to dashboard</button>
       </section>
-
-      <section class="stats">
-        <div class="stat"><span>MOOD</span><strong id="mood">FOCUSED</strong></div>
-        <div class="stat"><span>ENERGY</span><strong><b id="energy">72</b>%</strong></div>
-        <div class="stat"><span>XP</span><strong id="xp">024</strong></div>
-        <button class="feed" id="feed">FEED <span id="treats">03</span> 🍪</button>
-      </section>
-
-      <section class="chat-card">
-        <div class="chat-heading"><div><p class="eyebrow">BUDDY CHAT</p><h2>Need a nudge?</h2></div><span class="ai-badge">AI BETA</span></div>
-        <div class="chat-log" id="chat-log"><p class="buddy"><b>Buddy</b> I’m here. Ask me for a 2-minute study plan or a pep talk.</p></div>
-        <form class="chat-form" id="chat-form"><input id="chat-input" placeholder="Ask your side-kick..." autocomplete="off" /><button aria-label="Send message">↗</button></form>
-      </section>
-
-      <footer><span>FOCUS MODE</span><span>SPACE TO START</span><span id="build-label">v0.1 // DESKTOP BUILD</span></footer>
     </main>
     <script src="app.js"></script>
   </body>

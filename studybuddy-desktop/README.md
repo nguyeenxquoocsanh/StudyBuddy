@@ -1,8 +1,10 @@
 # StudyBuddy Desktop
 
-StudyBuddy Desktop is a standalone Tauri app based on the StudyBuddy browser extension. It keeps the 25-minute focus timer, buddy chat prompts, feeding rewards, and saved XP, energy, and treats.
+StudyBuddy Desktop is a standalone Tauri app based on StudyBuddy Companion 3.3. It includes a three-task quest board, focus timer, health and experience progression, scripted buddy prompts, and an animated desktop companion.
 
-The desktop app is a separate project from the browser extension. Its buddy chat uses local scripted prompts, and game state is saved in the webview's local storage.
+The companion floats above other apps on the primary display while a quest is running. Drag it to move it; right-click for walking, position-reset, and hide controls. The desktop app uses the extension's 1–240 minute task range, 25 EXP task reward, and 50 EXP per level. Timer expiry does not finish a task automatically.
+
+Desktop state is saved locally in the app's WebView storage and is not synchronized with Chrome. Existing desktop XP and energy are migrated to XP/levels and health the first time the new version runs; treats are retired. Buddy chat uses local scripted prompts. Health uses Windows' last-input timestamp to detect idle/activity periods; the app does not record keystrokes or their contents. There are no remote services.
 
 ## Windows prerequisites
 

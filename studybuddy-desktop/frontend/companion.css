@@ -1,0 +1,117 @@
+:root {
+  color-scheme: dark;
+  --green: #63e6be;
+  --pink: #ff6d8d;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  width: 300px;
+  height: 340px;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body { font: 12px ui-monospace, Consolas, monospace; }
+
+#stage {
+  position: relative;
+  width: 300px;
+  height: 340px;
+  overflow: hidden;
+  background: transparent;
+}
+
+#pet {
+  position: absolute;
+  top: 62px;
+  left: 44px;
+  width: 144px;
+  height: 156px;
+  transform-origin: top left;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  cursor: grab;
+}
+
+#pet.drag { cursor: grabbing; }
+
+#sprite {
+  display: block;
+  width: 144px;
+  height: 156px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#hud {
+  position: absolute;
+  top: 38px;
+  left: 58px;
+  display: flex;
+  width: 116px;
+  flex-direction: column;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.meter {
+  height: 7px;
+  overflow: hidden;
+  border: 1px solid #10151a;
+  border-radius: 4px;
+  background: #161b22;
+  box-shadow: 0 1px 2px #0008;
+}
+
+.meter > div { height: 100%; transition: width .2s ease-out; }
+#hp-fill { background: linear-gradient(90deg, #b9333d, #f3646e); }
+#xp-fill { background: linear-gradient(90deg, #2979a6, #59c3ff); }
+
+#menu {
+  position: absolute;
+  z-index: 1;
+  min-width: 170px;
+  padding: 5px;
+  border: 1px solid #bbc2cc;
+  border-radius: 10px;
+  background: #fff;
+  color: #222;
+  box-shadow: 0 8px 30px #0005;
+  font: 13px/1.35 system-ui, sans-serif;
+}
+
+#menu[hidden], #overlay-error[hidden] { display: none; }
+
+#menu button {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 9px 10px;
+  background: transparent;
+  color: #222;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+#menu button:hover, #menu button:focus-visible { outline: none; background: #e9f0ff; }
+
+#overlay-error {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  left: 4px;
+  margin: 0;
+  border: 1px solid #f3646e;
+  padding: 4px;
+  background: #10191c;
+  color: #ffabb2;
+  font-size: 10px;
+}
