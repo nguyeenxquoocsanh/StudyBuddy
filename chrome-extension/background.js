@@ -87,19 +87,24 @@ async function syncAlarm(study) {
     await chrome.alarms.clear('studyComplete');
   }
 }
+async function penalize(study, stats) {
+  stats.hp = Math.max(0, stats.hp - 10);
+  study.streak = 0;
+  return { study: await writeStudy(study), stats: await writePet(stats) };
+}
 async function reconcile() {
   let study=await readStudy();
+  let stats=await readPet();
   let completedTimer=false;
   if(study.running && study.endAt <= Date.now()) {
-    // Timer completed; task remains queued until Finished is explicitly clicked.
     study.running=false;
     study.endAt=0;
     study.remainingMs=0;
-    study=await writeStudy(study);
+    ({study,stats}=await penalize(study,stats));
     clearHealthClocks();
     completedTimer=true;
   }
-  return {study,completedTimer};
+  return {study,stats,completedTimer};
 }
 function send(promise, callback) {
   promise.then(callback, e=>callback({ok:false,error:String(e)}));
@@ -129,8 +134,7 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
   if(msg.type==='study:add' || msg.type==='study:remove' || msg.type==='study:start' ||
      msg.type==='study:pause' || msg.type==='study:finish') {
     return send(enqueue(async()=>{
-      let {study}=await reconcile();
-      let stats=await readPet();
+      let {study,stats}=await reconcile();
       let success=true, error='',finished=false;
       if(msg.type==='study:add') {
         const title=String(msg.title || '').trim().slice(0,120);
@@ -171,6 +175,7 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
         if(study.running){
           study.remainingMs=Math.max(0,study.endAt-Date.now());
           study.running=false;study.endAt=0;
+          ({study,stats}=await penalize(study,stats));
           clearHealthClocks();
         }
       } else if(msg.type==='study:finish') {
@@ -178,6 +183,8 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
         if(!current){success=false;error='No task to finish.';}
         else if(!study.started || (!study.running && study.remainingMs>0)) {
           success=false;error='Start your quest before marking it Finished.';
+        } else if(!study.running && study.remainingMs===0) {
+          success=false;error='This task timed out. Start it again to earn credit.';
         } else {
           study.tasks=study.tasks.filter(t=>t.id!==current.id);
           study.activeId=study.tasks[0]?.id??null;

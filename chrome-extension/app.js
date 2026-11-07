@@ -150,7 +150,7 @@ async function refresh(){
   const result=await send('study:read').catch(()=>null);
   if(result?.stats)renderPet(result.stats);
   if(result?.study)renderStudy(result.study);
-  if(result?.completedTimer&&!completedNotice){completedNotice=true;addMessage('Buddy','Time is up! Press Finished when your task is done.');}
+  if(result?.completedTimer&&!completedNotice){completedNotice=true;addMessage('Buddy','Time is up! You lost 10 HP and your focus streak reset. Start the task again when you are ready.');}
 }
 refresh();
 setInterval(()=>{
