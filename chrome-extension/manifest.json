@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "StudyBuddy Companion",
   "short_name": "StudyBuddy",
-  "description": "Study quests with a 3-task queue, 50-point EXP levels, focus-gated desktop mascot, and shared health.",
-  "version": "3.3.0",
+  "description": "Study quests with a reorderable queue, 50-point EXP levels, coin rewards, and a focus-gated mascot.",
+  "version": "3.5.1",
   "action": {
     "default_title": "StudyBuddy Companion",
     "default_popup": "index.html"

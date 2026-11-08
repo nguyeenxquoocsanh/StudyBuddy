@@ -31,13 +31,20 @@
   const statsKey = "petStatsV2";
   const studyKey = "studyBuddyV2";
   let sessionRunning = false;
-  let petStats = { hp: 50, maxHp: 50, xp: 0, xpNext: 100, level: 1 };
+  let koPaused = false;
+  let mascotDeployed = false;
+  let fadingOut = false;
+  let fadeTimer = 0;
+  let lastFinishEmptiedAt = 0;
+  let petStats = { hp: 50, maxHp: 50, xp: 0, xpNext: 50, level: 1 };
   let lastBehaviorReport = 0;
   let lastActivityAt = 0;
   let firstActivityAt = 0;
   let lastActivityEventAt = 0;
   let activityEvents = 0;
   let isKo = false;
+  let statsInitialized = false;
+  let effectTimeout = 0;
   const ACTIVE_RECENT_MS = 1500;
   const ACTIVITY_GAP_MS = 2000;
   function observeActivity(event) {
@@ -92,8 +99,23 @@
     #sprite { width:144px;height:156px;display:block;object-fit:contain;
       user-select:none;-webkit-user-select:none;pointer-events:none;
       -webkit-user-drag:none; }
-    #hud { position:absolute;top:-21px;left:14px;width:116px;height:18px;
+    #hud { position:absolute;top:-24px;left:9px;width:126px;height:22px;
       display:flex;flex-direction:column;gap:3px;pointer-events:none; }
+    #levelBadge { position:absolute;left:calc(100% + 5px);top:0;padding:2px 4px;
+      border:1px solid #3d5142;border-radius:4px;background:#263229;
+      color:#b4d4bd;font:700 8px/1.2 system-ui,sans-serif;white-space:nowrap; }
+    #levelEffect { position:absolute;top:-59px;left:50%;display:flex;gap:5px;
+      opacity:0;transform:translate(-50%,8px) scale(.85);pointer-events:none;
+      white-space:nowrap;font:700 10px/1 system-ui,sans-serif; }
+    #levelEffect.show { animation: level-reward 1s ease-out both; }
+    #levelEffect span { border:1px solid #80652f;border-radius:999px;padding:5px 7px;
+      background:#392f1f;color:#f3c46e;box-shadow:0 2px 8px #0006; }
+    #levelEffect span:first-child { border-color:#3d5142;background:#263229;color:#b4d4bd; }
+    @keyframes level-reward {
+      12% { opacity:1;transform:translate(-50%,0) scale(1); }
+      72% { opacity:1;transform:translate(-50%,-4px) scale(1); }
+      100% { opacity:0;transform:translate(-50%,-12px) scale(.95); }
+    }
     .meter { position:relative;width:100%;height:7px;box-sizing:border-box;
       overflow:hidden;border:1px solid #10151a;border-radius:4px;
       background:#161b22;box-shadow:0 1px 2px #0008; }
@@ -119,7 +141,7 @@
   sprite.draggable = false;
   const hud = document.createElement("div");
   hud.id = "hud";
-  hud.setAttribute("aria-label", "Companion health and experience");
+  hud.setAttribute("aria-label", "Companion health, experience, and level");
   const hpBar = document.createElement("div");
   hpBar.className = "meter";
   hpBar.setAttribute("aria-label", "Health");
@@ -132,8 +154,19 @@
   const xpFill = document.createElement("div");
   xpFill.id = "xpFill";
   xpBar.append(xpFill);
-  hud.append(hpBar, xpBar);
-  pet.append(sprite, hud);
+  const levelBadge=document.createElement("span");
+  levelBadge.id="levelBadge";
+  levelBadge.textContent="LV.1";
+  hud.append(hpBar, xpBar, levelBadge);
+  const levelEffect=document.createElement("div");
+  levelEffect.id="levelEffect";
+  levelEffect.setAttribute("aria-hidden","true");
+  for(const label of ["LEVEL UP!","+1 COIN"]) {
+    const effectLabel=document.createElement("span");
+    effectLabel.textContent=label;
+    levelEffect.append(effectLabel);
+  }
+  pet.append(sprite, hud, levelEffect);
   const menu = document.createElement("div");
   menu.id = "menu";
   menu.hidden = true;
@@ -180,10 +213,13 @@
   function renderBars() {
     hpFill.style.width = `${100 * petStats.hp / Math.max(1, petStats.maxHp)}%`;
     xpFill.style.width = `${100 * petStats.xp / Math.max(1, petStats.xpNext)}%`;
+    levelBadge.textContent=`LV.${Math.max(1,Number(petStats.level)||1)}`;
   }
   function acceptStats(stats) {
     if (!stats) return;
+    const leveledUp=statsInitialized&&Number(stats.level)>Number(petStats.level);
     petStats = { ...petStats, ...stats };
+    statsInitialized=true;
     const nowKo = petStats.hp <= 0;
     if (nowKo !== isKo) {
       isKo = nowKo;
@@ -202,6 +238,13 @@
       setSprite();
     }
     renderBars();
+    if(leveledUp) {
+      levelEffect.classList.remove("show");
+      void levelEffect.offsetWidth;
+      levelEffect.classList.add("show");
+      clearTimeout(effectTimeout);
+      effectTimeout=setTimeout(()=>levelEffect.classList.remove("show"),1100);
+    }
   }
   function sendBehavior(now) {
     if (now - lastBehaviorReport < 1000) return;
@@ -223,9 +266,64 @@
     pet.style.transform = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0) scale(${scale()})`;
   }
   function applyVisibility() {
-    const visible = settings.enabled && !hiddenForTab && sessionRunning;
+    const visible = settings.enabled && !hiddenForTab && (mascotDeployed || koPaused || fadingOut);
     pet.style.display = visible ? "block" : "none";
     if (!visible) menu.hidden = true;
+  }
+  function cancelFade() {
+    clearTimeout(fadeTimer);
+    fadingOut=false;
+    pet.style.opacity="";
+    pet.style.transition="";
+  }
+  function fadeAway() {
+    cancelFade();
+    fadingOut=true;
+    pet.style.transition="opacity 650ms ease";
+    pet.style.opacity="1";
+    applyVisibility();
+    requestAnimationFrame(()=>{pet.style.opacity="0";});
+    fadeTimer=setTimeout(()=>{
+      fadingOut=false;
+      pet.style.opacity="";
+      pet.style.transition="";
+      applyVisibility();
+    },650);
+  }
+  function updateStudyVisibility(record, initial=false) {
+    const nextRunning=Boolean(record?.running&&record?.endAt>Date.now());
+    const queued=Array.isArray(record?.tasks)&&record.tasks.length>0;
+    const deployed=queued&&Boolean(record?.mascotDeployed??(record?.started||record?.running));
+    const wasDeployed=mascotDeployed;
+    const fadeAt=Number(record?.lastFinishEmptiedAt)||0;
+    const finishedLast=!initial&&wasDeployed&&!queued&&fadeAt>0&&fadeAt!==lastFinishEmptiedAt;
+    if(deployed&&!wasDeployed) {
+      cancelFade();
+      if(initial) {
+        x=clamp(x,0,maxX());
+        y=groundY();
+        vy=0;
+        reposition();
+        setSprite();
+      } else {
+        reset();
+      }
+    }
+    if(!nextRunning&&sessionRunning) {
+      dragging=false;
+      press=null;
+      pet.classList.remove("drag");
+      menu.hidden=true;
+    }
+    sessionRunning=nextRunning;
+    mascotDeployed=deployed;
+    koPaused=Boolean(record?.koPaused);
+    lastFinishEmptiedAt=fadeAt;
+    if(finishedLast&&settings.enabled&&!hiddenForTab)fadeAway();
+    else {
+      if(mascotDeployed&&fadingOut)cancelFade();
+      applyVisibility();
+    }
   }
   function reset() {
     x = clamp((window.innerWidth - width()) / 2, 0, maxX());
@@ -251,7 +349,7 @@
   }
   function tick() {
     ticks++;
-    if (isKo || dragging || settings.paused || !settings.enabled || hiddenForTab || !sessionRunning) return;
+    if (isKo || dragging || settings.paused || !settings.enabled || hiddenForTab || !mascotDeployed) return;
     // Lock to viewport ground, independent of scrolling and page layout.
     const ground = groundY();
     if (y < ground) {
@@ -301,7 +399,7 @@
   }
   function point(event) { return { x: event.clientX, y: event.clientY }; }
   function down(event) {
-    if (isKo || event.button !== 0 || !settings.enabled || !sessionRunning) return;
+    if (isKo || event.button !== 0 || !settings.enabled || !mascotDeployed) return;
     event.preventDefault();
     menu.hidden = true;
     const p = point(event);
@@ -385,13 +483,7 @@
     if (changes.resetRequest) reset();
     if (changes[statsKey]) acceptStats(changes[statsKey].newValue);
     if (changes[studyKey]) {
-      const next = changes[studyKey].newValue;
-      const nextRunning = Boolean(next?.running && next?.endAt>Date.now());
-      if(nextRunning!==sessionRunning){
-        sessionRunning=nextRunning;
-        dragging=false;press=null;menu.hidden=true;
-        if(sessionRunning)reset();
-      }
+      updateStudyVisibility(changes[studyKey].newValue);
     }
     x = clamp(x, 0, maxX());
     y = clamp(y, 0, groundY());
@@ -402,17 +494,12 @@
     .then(response => { if (response?.stats) acceptStats(response.stats); })
     .catch(() => {});
   chrome.storage.local.get(studyKey).then(data=>{
-    const record=data[studyKey];
-    sessionRunning=Boolean(record?.running && record?.endAt>Date.now());
-    if(sessionRunning)reset();
-    applyVisibility();
+    updateStudyVisibility(data[studyKey],true);
   }).catch(()=>{});
   // Guard against stale running state if the timer expires while the popup is closed.
   setInterval(()=>{
     chrome.storage.local.get(studyKey).then(data=>{
-      const record=data[studyKey];
-      const next=Boolean(record?.running && record?.endAt>Date.now());
-      if(next!==sessionRunning){sessionRunning=next;if(next)reset();applyVisibility();}
+      updateStudyVisibility(data[studyKey]);
     }).catch(()=>{});
   },2000);
   renderBars();

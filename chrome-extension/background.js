@@ -7,7 +7,7 @@ const TASK_LIMIT = 3;
 const MAX_XP = 50;
 const HP_MAX = 50;
 const DEFAULT_MINUTES = 25;
-const BASE_PET = {hp:50,maxHp:HP_MAX,xp:0,xpNext:MAX_XP,level:1};
+const BASE_PET = {hp:50,maxHp:HP_MAX,xp:0,xpNext:MAX_XP,level:1,coins:0};
 let serialized = Promise.resolve();
 let idleOwner = null, idleSince = 0, idleReport = 0, idleTicks = 0;
 let activeOwner = null, activeSince = 0, activeReport = 0, healedTicks = 0;
@@ -29,7 +29,8 @@ function cleanPet(raw) {
   // Older builds stored cumulative XP, newer builds store progress within a level.
   const total = oldNext > MAX_XP ? oldXp : (oldLevel-1)*MAX_XP + oldXp;
   return {hp:clamp(finite(x.hp,50),0,HP_MAX),maxHp:HP_MAX,
-    xp:total % MAX_XP, xpNext:MAX_XP,level:Math.floor(total/MAX_XP)+1};
+    xp:total % MAX_XP, xpNext:MAX_XP,level:Math.floor(total/MAX_XP)+1,
+    coins:Math.max(0,Math.floor(finite(x.coins,0)))};
 }
 async function readPet() {
   const data = await chrome.storage.local.get(PET_KEY);
@@ -43,7 +44,9 @@ async function writePet(pet) {
 function grantXp(stats, amount) {
   // XP in storage is progress within the current level, not lifetime XP.
   const total = stats.xp + amount;
-  stats.level += Math.floor(total / MAX_XP);
+  const levelsGained = Math.floor(total / MAX_XP);
+  stats.level += levelsGained;
+  stats.coins += levelsGained;
   stats.xp = total % MAX_XP;
   stats.xpNext = MAX_XP;
   return stats;
@@ -60,11 +63,16 @@ function cleanStudy(raw) {
   const tasks = Array.isArray(x.tasks) ? x.tasks.map(cleanTask).filter(Boolean).slice(0,TASK_LIMIT) : [];
   const activeId = tasks.some(t=>t.id===x.activeId) ? x.activeId : (tasks[0]?.id ?? null);
   const active = tasks.find(t=>t.id===activeId);
-  const sessionMs = (active?.minutes || DEFAULT_MINUTES)*60000;
+  const sessionMs = active ? active.minutes*60000 : 0;
   const rem = clamp(finite(x.remainingMs,sessionMs),0,sessionMs);
   return {tasks,activeId,running:!!x.running && !!active && rem > 0,
     endAt:Math.max(0,finite(x.endAt,0)),remainingMs:rem,
     started:!!x.started && !!active,
+    mascotDeployed:tasks.length>0&&(x.mascotDeployed===true||
+      (x.mascotDeployed==null&&(x.started===true||x.running===true))),
+    lastFinishEmptiedAt:Math.max(0,finite(x.lastFinishEmptiedAt,0)),
+    koPaused:x.koPaused===true,
+    reviveNonce:Math.max(0,finite(x.reviveNonce,0)),
     streak:Math.max(0,Math.floor(finite(x.streak,0)))};
 }
 async function readStudy() {
@@ -101,6 +109,8 @@ async function reconcile() {
     study.endAt=0;
     study.remainingMs=0;
     ({study,stats}=await penalize(study,stats));
+    if(stats.hp<=0) study.koPaused=true;
+    study=await writeStudy(study);
     clearHealthClocks();
     completedTimer=true;
   }
@@ -128,11 +138,17 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
       const pet=await readPet();
       pet.hp=pet.maxHp;
       clearHealthClocks();
-      return {ok:true,stats:await writePet(pet)};
+      const study=await readStudy();
+      if(study.koPaused) {
+        study.koPaused=false;
+        study.reviveNonce=Date.now();
+        await writeStudy(study);
+      }
+      return {ok:true,stats:await writePet(pet),study};
     }),reply);
   }
   if(msg.type==='study:add' || msg.type==='study:remove' || msg.type==='study:start' ||
-     msg.type==='study:pause' || msg.type==='study:finish') {
+     msg.type==='study:pause' || msg.type==='study:finish' || msg.type==='study:reorder') {
     return send(enqueue(async()=>{
       let {study,stats}=await reconcile();
       let success=true, error='',finished=false;
@@ -160,14 +176,45 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
             study.remainingMs=(study.tasks[0]?.minutes??DEFAULT_MINUTES)*60000;
             study.started=false;
           }
+          if(study.tasks.length===0)study.mascotDeployed=false;
+        }
+      } else if(msg.type==='study:reorder') {
+        const ids=Array.isArray(msg.ids)?msg.ids.map(String):[];
+        const existingIds=study.tasks.map(task=>task.id);
+        const valid=ids.length===existingIds.length
+          && new Set(ids).size===ids.length
+          && ids.every(id=>existingIds.includes(id));
+        if(!valid) {
+          success=false;
+          error='Task order is invalid. Refresh the queue and try again.';
+        } else if(study.started && ids[0]!==study.activeId) {
+          success=false;
+          error='The active task must stay first after it has started.';
+        } else {
+          study.tasks=ids.map(id=>study.tasks.find(task=>task.id===id));
+          if(!study.started) {
+            study.activeId=study.tasks[0]?.id??null;
+            study.remainingMs=(study.tasks[0]?.minutes??0)*60000;
+          }
         }
       } else if(msg.type==='study:start') {
         const current=study.tasks.find(t=>t.id===study.activeId);
         if(!current){success=false;error='Add a task first.';}
         else if(!study.running) {
+          if(study.koPaused || stats.hp<=0) {
+            stats.hp=stats.maxHp;
+            stats=await writePet(stats);
+            study.reviveNonce=Date.now();
+            study.koPaused=false;
+          }
+          const currentIndex=study.tasks.findIndex(task=>task.id===study.activeId);
+          if(currentIndex>0) {
+            study.tasks=[current,...study.tasks.filter(task=>task.id!==study.activeId)];
+          }
           if(study.remainingMs<=0) study.remainingMs=current.minutes*60000;
           study.running=true;
           study.started=true;
+          study.mascotDeployed=true;
           study.endAt=Date.now()+study.remainingMs;
           clearHealthClocks();
         }
@@ -192,6 +239,10 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
           study.started=false;
           study.running=false;study.endAt=0;
           study.streak+=1;
+          if(study.tasks.length===0) {
+            study.mascotDeployed=false;
+            study.lastFinishEmptiedAt=Date.now();
+          }
           stats=await writePet(grantXp(stats,25));
           clearHealthClocks();
           finished=true;
@@ -204,7 +255,7 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
   if(msg.type==='pet:behavior'){
     if(!sender.tab || sender.frameId!==0){reply({ok:false});return;}
     return send(enqueue(async()=>{
-      const {study}=await reconcile();
+      let {study}=await reconcile();
       // Authoritative gate: even queued reports cannot alter HP when paused/finished.
       if(!study.running){clearHealthClocks();return {ok:true};}
       const tabId=sender.tab.id;
@@ -213,7 +264,16 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
         return {ok:true};
       }
       const stats=await readPet();
-      if(stats.hp<=0){clearHealthClocks();return {ok:true,stats};}
+      if(stats.hp<=0) {
+        study.remainingMs=Math.max(0,study.endAt-Date.now());
+        study.running=false;
+        study.endAt=0;
+        study.koPaused=true;
+        study=await writeStudy(study);
+        await syncAlarm(study);
+        clearHealthClocks();
+        return {ok:true,stats,study};
+      }
       const now=Date.now();
       if(msg.activity===true){
         idleOwner=null;idleSince=0;idleReport=0;idleTicks=0;
@@ -231,9 +291,21 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
         idleReport=now;
         const due=Math.max(0,Math.floor((now-idleSince-15000)/3000));
         const loss=Math.max(0,due-idleTicks);idleTicks=due;
-        if(loss){stats.hp=Math.max(0,stats.hp-loss);await writePet(stats);}
+        if(loss) {
+          stats.hp=Math.max(0,stats.hp-loss*2);
+          await writePet(stats);
+          if(stats.hp===0) {
+            study.remainingMs=Math.max(0,study.endAt-Date.now());
+            study.running=false;
+            study.endAt=0;
+            study.koPaused=true;
+            study=await writeStudy(study);
+            await syncAlarm(study);
+            clearHealthClocks();
+          }
+        }
       }
-      return {ok:true,stats};
+      return {ok:true,stats,study};
     }),reply);
   }
 });
@@ -247,6 +319,6 @@ chrome.runtime.onInstalled.addListener(()=>{
   enqueue(async()=>{
     const data=await chrome.storage.local.get([PET_KEY,STUDY_KEY]);
     if(!data[PET_KEY])await writePet(BASE_PET);
-    if(!data[STUDY_KEY])await writeStudy({tasks:[],activeId:null,remainingMs:DEFAULT_MINUTES*60000,running:false,endAt:0,streak:0});
+    if(!data[STUDY_KEY])await writeStudy({tasks:[],activeId:null,remainingMs:0,running:false,endAt:0,streak:0});
   });
 });

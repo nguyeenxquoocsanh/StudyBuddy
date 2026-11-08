@@ -2,11 +2,13 @@
 const $ = id => document.getElementById(id);
 const defaults = {darkMode:false, enabled:true, paused:false, speed:1.5, size:100};
 const SESSION_MS = 25*60*1000;
-let currentStats = {hp:50,maxHp:50,xp:0,xpNext:50,level:1};
-let study = {tasks:[],activeId:null,remainingMs:SESSION_MS,running:false,endAt:0,streak:0};
+let currentStats = {hp:50,maxHp:50,xp:0,xpNext:50,level:1,coins:0};
+let study = {tasks:[],activeId:null,remainingMs:0,running:false,endAt:0,streak:0};
 let mascotFrame = 0;
 let settingsOpen = false;
 let completedNotice = false;
+let draggedTaskId = null;
+let statsInitialized = false;
 const send = (type, extra={}) => chrome.runtime.sendMessage({type,...extra});
 function renderSettings() {
   $('speedVal').textContent = Number($('speed').value).toFixed(1);
@@ -51,15 +53,27 @@ $('showNow').addEventListener('click', async()=>{
 $('restoreHp').addEventListener('click',async()=>{
   const result=await send('pet:restore').catch(()=>null);
   if (result?.stats) renderPet(result.stats);
+  if (result?.study) renderStudy(result.study);
 });
 function renderPet(stats) {
+  const leveledUp = statsInitialized && stats.level > currentStats.level;
   currentStats=stats;
+  statsInitialized=true;
   $('hp-fill').style.width=`${100*Math.max(0,stats.hp)/Math.max(stats.maxHp,1)}%`;
   $('pet-condition').textContent=stats.hp<=0?'KO':stats.hp<15?'LOW':'HEALTHY';
   $('mood').textContent=stats.hp<=0?'KO':study.running?'FOCUSED':'READY';
   $('xp-fill').style.width=`${100*Math.max(0,stats.xp)/50}%`;
   $('level-label').textContent=`LEVEL ${stats.level}`;
+  $('coin-count').textContent=String(Math.max(0,Number(stats.coins)||0));
+  if(leveledUp) {
+    const wallet=$('coin-count').parentElement;
+    wallet.classList.remove('level-up');
+    void wallet.offsetWidth;
+    wallet.classList.add('level-up');
+    setTimeout(()=>wallet.classList.remove('level-up'),900);
+  }
   if(stats.hp<=0) $('mascot-preview').src='sprites/dead_0.png';
+  else if($('mascot-preview').src.endsWith('/sprites/dead_0.png')) $('mascot-preview').src='sprites/idle_0.png';
 }
 function renderQueue(){
   const list=$('task-list');list.replaceChildren();
@@ -82,27 +96,76 @@ function renderQueue(){
     remove.textContent='×';remove.title=`Remove ${task.title}`;remove.setAttribute('aria-label',`Remove ${task.title}`);
     remove.disabled=study.running && task.id===study.activeId;
     remove.addEventListener('click',()=>action('study:remove',{id:task.id}));
+    const canDrag=study.tasks.length>1&&!(study.started&&task.id===study.activeId);
+    li.draggable=canDrag;
+    li.dataset.taskId=task.id;
+    if(canDrag) {
+      li.classList.add('reorderable');
+      li.title='Drag to change task order';
+      li.setAttribute('aria-label',`Drag to reorder ${task.title}`);
+      const grip=document.createElement('span');
+      grip.className='drag-grip';
+      grip.textContent='⠿';
+      grip.setAttribute('aria-hidden','true');
+      li.prepend(grip);
+      li.addEventListener('dragstart',event=>{
+        draggedTaskId=task.id;
+        li.classList.add('dragging');
+        event.dataTransfer.effectAllowed='move';
+        event.dataTransfer.setData('text/plain',task.id);
+      });
+      li.addEventListener('dragend',()=>{
+        draggedTaskId=null;
+        document.querySelectorAll('#task-list li').forEach(row=>row.classList.remove('dragging','drag-target'));
+      });
+    }
+    li.addEventListener('dragover',event=>{
+      if(!draggedTaskId||draggedTaskId===task.id||(study.started&&task.id===study.activeId))return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect='move';
+      li.classList.add('drag-target');
+    });
+    li.addEventListener('dragleave',()=>li.classList.remove('drag-target'));
+    li.addEventListener('drop',event=>{
+      event.preventDefault();
+      li.classList.remove('drag-target');
+      const fromId=draggedTaskId;
+      draggedTaskId=null;
+      if(!fromId||fromId===task.id)return;
+      const ids=study.tasks.map(item=>item.id);
+      const from=ids.indexOf(fromId);
+      const target=ids.indexOf(task.id);
+      if(from<0||target<0)return;
+      const rect=li.getBoundingClientRect();
+      const insertAfter=event.clientY>=rect.top+rect.height/2;
+      const [moved]=ids.splice(from,1);
+      let destination=target+(insertAfter?1:0);
+      if(from<destination)destination--;
+      ids.splice(destination,0,moved);
+      action('study:reorder',{ids});
+    });
     li.append(num,details,remove);list.append(li);
   });
 }
-function renderStudy(s) {
+function renderStudy(s, updateQueue=true) {
   study={...study,...s};
   const task=study.tasks.find(t=>t.id===study.activeId);
   const duration=(task?.minutes||25)*60000;
-  const remaining=study.running?Math.max(0,study.endAt-Date.now()):Math.max(0,study.remainingMs);
+  const remaining=!task?0:study.running?Math.max(0,study.endAt-Date.now()):Math.max(0,study.remainingMs);
   const seconds=Math.ceil(remaining/1000);
   $('timer').textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
-  $('progress').style.width=`${Math.max(0,Math.min(100,100*(1-remaining/duration)))}%`;
+  $('progress').style.width=`${task?Math.max(0,Math.min(100,100*(1-remaining/duration))):0}%`;
   $('quest-name').textContent=task?.title||'Add a task to begin';
-  $('session-label').textContent=`${task?.minutes||25} MIN FOCUS SESSION`;
+  $('session-label').textContent=task?`${task.minutes} MIN FOCUS SESSION`:'NO TASK SELECTED';
   $('streak').textContent=`STREAK ${String(study.streak).padStart(2,'0')}`;
-  $('status-chip').textContent=study.running?'LOCKED IN':task&&remaining===0?'TIME UP':task&&remaining<duration?'PAUSED':'READY';
+  $('status-chip').textContent=study.running?'LOCKED IN':study.koPaused?'KO — PAUSED':task&&remaining===0?'TIME UP':task&&remaining<duration?'PAUSED':'READY';
   $('status-chip').classList.toggle('active',study.running);
+  $('status-chip').classList.toggle('ko',Boolean(study.koPaused));
   $('mood').textContent=currentStats.hp<=0?'KO':study.running?'FOCUSED':'READY';
   $('start').disabled=study.running||!task;
   $('pause').disabled=!study.running;
   $('finish').disabled=!task||!study.started||(!study.running&&remaining>0);
-  renderQueue();
+  if(updateQueue)renderQueue();
 }
 async function action(type,extra={}){
   const result=await send(type,extra).catch(error=>{console.error(error);return null;});
@@ -163,7 +226,7 @@ async function refresh(){
 }
 refresh();
 setInterval(()=>{
-  renderStudy(study);
+  renderStudy(study,false);
   if(study.running&&study.endAt<=Date.now())refresh();
 },1000);
 setInterval(()=>{

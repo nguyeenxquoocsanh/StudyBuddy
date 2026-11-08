@@ -10,7 +10,7 @@
 <main class="app">
   <header class="topbar">
     <div class="brand"><span class="brand-mark">SB</span><span>STUDYBUDDY</span></div>
-    <div class="top-actions"><span class="live"><i></i> ONLINE</span>
+    <div class="top-actions"><span class="live"><i></i> ONLINE</span><span class="wallet" aria-label="Coin wallet"><span class="coin-icon" aria-hidden="true"></span><b id="coin-count">0</b></span>
       <button id="settings-toggle" class="icon-button" type="button" aria-label="Open settings" title="Settings" aria-expanded="false" aria-controls="settings-panel">
         <svg class="hex-settings-icon" viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
           <path fill="#ffffff" fill-rule="evenodd" d="M6.4 2.5H17.6L23.2 12L17.6 21.5H6.4L0.8 12Z M12 7.3a4.7 4.7 0 1 0 0 9.4a4.7 4.7 0 1 0 0-9.4Z"/>
@@ -42,9 +42,9 @@
     </section>
     <section class="focus-card">
       <div class="card-heading"><div><p class="eyebrow">CURRENT QUEST</p><h2 id="quest-name">Add a task to begin</h2></div><span class="status-chip" id="status-chip">READY</span></div>
-      <div class="timer" id="timer" role="timer" aria-label="Focus session countdown" aria-live="off">25:00</div>
+      <div class="timer" id="timer" role="timer" aria-label="Focus session countdown" aria-live="off">00:00</div>
       <div class="progress"><span id="progress"></span></div>
-      <div class="timer-meta"><span id="session-label">25 MIN FOCUS SESSION</span><span id="streak">STREAK 00</span></div>
+      <div class="timer-meta"><span id="session-label">NO TASK SELECTED</span><span id="streak">STREAK 00</span></div>
       <div class="actions"><button class="primary" id="start" type="button">START SESSION</button><button class="secondary" id="pause" type="button">PAUSE</button><button class="finished" id="finish" type="button">FINISHED ✓</button></div>
     </section>
     <section class="stats single-stat">
@@ -55,7 +55,7 @@
       <div class="chat-log" id="chat-log" role="log" aria-live="polite"><p class="buddy"><b>Buddy</b> Need a plan or a gentle nudge? I'm here.</p></div>
       <form class="chat-form" id="chat-form"><input id="chat-input" aria-label="Ask your companion" placeholder="Ask Buddy for a nudge..." autocomplete="off" /><button type="submit" aria-label="Send message">↗</button></form>
     </section>
-    <footer><span>FOCUS MODE</span><span>SPACE TO START</span><span>v3.3</span></footer>
+    <footer><span>FOCUS MODE</span><span>SPACE TO START</span><span>v3.5.1</span></footer>
   </section>
 
   <section id="settings-panel" hidden aria-label="Companion settings">
@@ -72,8 +72,8 @@
       <button class="secondary" id="reset" type="button">Reset position</button>
       <button class="primary" id="showNow" type="button">Show mascot on webpages</button>
     </div>
-    <p class="settings-note">The mascot appears only during a running quest. Pausing freezes all HP and EXP updates. Finishing a task awards 25 EXP and pauses the next quest. EXP levels up every 50 points.</p>
-    <p class="settings-note">Health loses 1 HP every 3 seconds after 15 seconds of continuous mascot idle. Sustained keyboard/mouse activity regenerates 1 HP every 3 seconds after 5 seconds. At 0 HP, the companion remains KO until restored.</p>
+    <p class="settings-note">The mascot appears when the first quest starts and stays visible while tasks remain queued. Pausing stops HP and EXP updates; finishing a task awards 25 EXP and pauses the next quest. Every 50 EXP grants a level and one coin.</p>
+    <p class="settings-note">Health loses 2 HP every 3 seconds after 15 seconds of continuous mascot idle. Sustained keyboard/mouse activity regenerates 1 HP every 3 seconds after 5 seconds. At 0 HP, the timer pauses with time saved; start the quest to restore Buddy and resume.</p>
     <p class="settings-note">If missing on a site: Chrome Extensions → Details → Site access → On all sites. Chrome's own pages are restricted.</p>
     <button class="secondary back-button" id="back-to-dashboard" type="button">← Back to dashboard</button>
   </section>
