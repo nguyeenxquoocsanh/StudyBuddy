@@ -1,5 +1,5 @@
 # StudyBuddy
-
+![alt text](demo.png)
 A study companion for building focus habits with short quests, a timer, and a little animated buddy. Available as a Chrome extension or Windows desktop app.
 
 ## Get started
@@ -20,3 +20,5 @@ python -m uvicorn main:app --app-dir server --host 127.0.0.1 --port 8000
 ```
 
 Keep the server running while chatting. The key stays in the server environment.
+
+
