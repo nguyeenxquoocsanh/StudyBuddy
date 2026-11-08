@@ -22,7 +22,7 @@ function createDefaultState() {
       started: false,
       streak: 0,
     },
-    settings: { enabled: true, paused: false, speed: 1.5, size: 100 },
+    settings: { enabled: true, paused: false, speed: 1.5, size: 100, darkMode: false },
     hiddenForSession: false,
     resetRequest: 0,
   };
@@ -101,6 +101,7 @@ function normalizeState(saved) {
       paused: Boolean(saved.settings?.paused),
       speed: clamp(finite(saved.settings?.speed, 1.5), 0.4, 5),
       size: clamp(finite(saved.settings?.size, 100), 40, 150),
+      darkMode: Boolean(saved.settings?.darkMode),
     },
     hiddenForSession: Boolean(saved.hiddenForSession),
     resetRequest: Math.max(0, finite(saved.resetRequest, 0)),
@@ -301,6 +302,8 @@ function renderStudy() {
 }
 
 function renderSettings() {
+  $("darkMode").checked = state.settings.darkMode;
+  document.documentElement.dataset.theme = state.settings.darkMode ? "dark" : "light";
   $("enabled").checked = state.settings.enabled;
   $("paused").checked = state.settings.paused;
   $("speed").value = String(state.settings.speed);
@@ -580,6 +583,11 @@ $("start").addEventListener("click", startStudy);
 $("pause").addEventListener("click", pauseStudy);
 $("finish").addEventListener("click", finishTask);
 $("enabled").addEventListener("change", (event) => setSetting("enabled", event.target.checked));
+$("darkMode").addEventListener("change", (event) => {
+  state.settings.darkMode = event.target.checked;
+  document.documentElement.dataset.theme = state.settings.darkMode ? "dark" : "light";
+  saveState();
+});
 $("paused").addEventListener("change", (event) => {
   clearHealthClocks();
   setSetting("paused", event.target.checked);

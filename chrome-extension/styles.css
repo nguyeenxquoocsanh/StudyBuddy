@@ -1,16 +1,16 @@
 :root {
-  color-scheme: dark;
-  --ink: #f6f2ec;
-  --muted: #b6ad9e;
-  --paper: #201d1a;
-  --canvas: #171615;
-  --card: #201d1a;
-  --line: #39342e;
-  --teal: #679b7b;
-  --teal-dark: #8fb89e;
-  --coral: #d9745b;
-  --butter: #e5a745;
-  --shadow: 0 5px 16px rgb(0 0 0 / 24%);
+  color-scheme: light;
+  --ink: #303942;
+  --muted: #6d777c;
+  --paper: #fffaf1;
+  --canvas: #f7efe2;
+  --card: #fffdf8;
+  --line: #eadfce;
+  --teal: #367f75;
+  --teal-dark: #285d56;
+  --coral: #e87963;
+  --butter: #f2c66d;
+  --shadow: 0 5px 16px rgb(75 60 43 / 8%);
 }
 
 * { box-sizing: border-box; }
@@ -578,6 +578,22 @@ input[type="range"] { display: block; width: 100%; accent-color: var(--teal); ma
   }
 }
 
+@scope (html[data-theme="dark"]) {
+  :scope {
+    color-scheme: dark;
+    --ink: #f6f2ec;
+    --muted: #b6ad9e;
+    --paper: #201d1a;
+    --canvas: #171615;
+    --card: #201d1a;
+    --line: #39342e;
+    --teal: #679b7b;
+    --teal-dark: #8fb89e;
+    --coral: #d9745b;
+    --butter: #e5a745;
+    --shadow: 0 5px 16px rgb(0 0 0 / 24%);
+  }
+
 body {
   background:
     radial-gradient(ellipse at 10% 5%, rgb(229 167 69 / 8%), transparent 34%),
@@ -730,3 +746,4 @@ footer { color: var(--muted); }
 input[type="checkbox"], input[type="range"] { accent-color: var(--teal); }
 .setting-label output { color: var(--teal-dark); }
 .settings-note { color: var(--muted); }
+}

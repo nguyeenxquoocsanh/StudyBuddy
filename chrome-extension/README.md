@@ -9,6 +9,7 @@ The Chrome extension retains your custom sprite mascot, health, drag & drop, ani
 - **Finished** removes the current task, grants **25 EXP**, and pauses until you explicitly start the next task.
 - **50 EXP per level**; EXP rolls over and increments Level.
 - Timers, tasks, HP, EXP and settings are shared in `chrome.storage.local` across tabs in the same Chrome profile.
+- Toggle between light and dark mode from Settings; the selected theme is saved with your extension settings.
 - The countdown can reach zero without automatically marking a task complete; press Finished when it is actually done.
 - At 0 HP the mascot shows its KO sprite and stays still until restored using Settings.
 - Health follows the existing idle/activity rule **only while a task session is running**.

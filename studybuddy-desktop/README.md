@@ -6,6 +6,8 @@ The companion floats above other apps on the primary display while a quest is ru
 
 Desktop state is saved locally in the app's WebView storage and is not synchronized with Chrome. Existing desktop XP and energy are migrated to XP/levels and health the first time the new version runs; treats are retired. Buddy chat uses local scripted prompts. Health uses Windows' last-input timestamp to detect idle/activity periods; the app does not record keystrokes or their contents. There are no remote services.
 
+Toggle between light and dark mode in Companion settings; the selected theme is saved with desktop state.
+
 ## Windows prerequisites
 
 - Windows 10 or 11.

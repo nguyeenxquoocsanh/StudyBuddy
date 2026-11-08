@@ -1,6 +1,6 @@
 "use strict";
 const $ = id => document.getElementById(id);
-const defaults = {enabled:true, paused:false, speed:1.5, size:100};
+const defaults = {darkMode:false, enabled:true, paused:false, speed:1.5, size:100};
 const SESSION_MS = 25*60*1000;
 let currentStats = {hp:50,maxHp:50,xp:0,xpNext:50,level:1};
 let study = {tasks:[],activeId:null,remainingMs:SESSION_MS,running:false,endAt:0,streak:0};
@@ -11,6 +11,9 @@ const send = (type, extra={}) => chrome.runtime.sendMessage({type,...extra});
 function renderSettings() {
   $('speedVal').textContent = Number($('speed').value).toFixed(1);
   $('sizeVal').textContent = `${$('size').value}%`;
+}
+function applyTheme(darkMode) {
+  document.documentElement.dataset.theme = darkMode ? 'dark' : 'light';
 }
 function setSettingsView(open) {
   settingsOpen = open;
@@ -28,6 +31,7 @@ chrome.storage.local.get(defaults).then(saved=>{
     if (control.type==='checkbox') control.checked=Boolean(saved[key]);
     else control.value=saved[key];
   }
+  applyTheme(Boolean(saved.darkMode));
   renderSettings();
 });
 for (const key of Object.keys(defaults)) {
@@ -35,6 +39,7 @@ for (const key of Object.keys(defaults)) {
   control.addEventListener(control.type==='checkbox'?'change':'input',()=>{
     const value=control.type==='checkbox'?control.checked:Number(control.value);
     chrome.storage.local.set({[key]:value});
+    if(key==='darkMode') applyTheme(value);
     renderSettings();
   });
 }
@@ -143,6 +148,10 @@ document.addEventListener('keydown',event=>{
 });
 chrome.storage.onChanged.addListener((changes,area)=>{
   if(area!=='local')return;
+  if(changes.darkMode) {
+    $('darkMode').checked=Boolean(changes.darkMode.newValue);
+    applyTheme(Boolean(changes.darkMode.newValue));
+  }
   if(changes.petStatsV2)renderPet(changes.petStatsV2.newValue);
   if(changes.studyBuddyV2)renderStudy(changes.studyBuddyV2.newValue);
 });
