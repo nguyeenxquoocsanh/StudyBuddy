@@ -1,7 +1,6 @@
 "use strict";
 const $ = id => document.getElementById(id);
 const defaults = {darkMode:false, enabled:true, paused:false, speed:1.5, size:100};
-const SESSION_MS = 25*60*1000;
 let currentStats = {hp:50,maxHp:50,xp:0,xpNext:50,level:1,coins:0};
 let study = {tasks:[],activeId:null,remainingMs:0,running:false,endAt:0,streak:0};
 let mascotFrame = 0;
@@ -194,16 +193,41 @@ function addMessage(author,text,classname='') {
   $('chat-log').append(p);
   $('chat-log').scrollTop=$('chat-log').scrollHeight;
 }
-function respond(text){
-  const lower=text.toLowerCase();
-  if(lower.includes('plan')) return 'Try 20 minutes reading, 5 minutes recall, then a short break.';
-  if(lower.includes('tired')||lower.includes('break'))return 'A short rest, water, and a stretch may help you refocus.';
-  if(lower.includes('study')||lower.includes('focus'))return 'Choose one specific task. Start the timer, then work on that task only.';
-  return 'Pick one small next step and give it a try.';
+async function askBuddy(text) {
+  const response=await fetch('http://127.0.0.1:8000/chat',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({message:text})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(result.detail||'AI request failed.');
+  if(typeof result.reply!=='string'||!result.reply.trim())throw new Error('The AI service returned an empty reply.');
+  return result.reply;
 }
-$('chat-form').addEventListener('submit',event=>{
+$('chat-form').addEventListener('submit',async event=>{
   event.preventDefault();const text=$('chat-input').value.trim();if(!text)return;
-  addMessage('You',text,'you');$('chat-input').value='';addMessage('Buddy',respond(text));
+  addMessage('You',text,'you');$('chat-input').value='';
+  const submitButton=$('chat-form').querySelector('button');
+  submitButton.disabled=true;
+  const thinking=document.createElement('p');
+  thinking.className='buddy thinking';
+  thinking.textContent='Buddy Thinking...';
+  $('chat-log').append(thinking);
+  $('chat-log').scrollTop=$('chat-log').scrollHeight;
+  try {
+    const reply=await askBuddy(text);
+    thinking.remove();
+    addMessage('Buddy',reply);
+  } catch(error) {
+    thinking.remove();
+    const message=error instanceof TypeError
+      ? 'I cannot reach the AI server. Start the local StudyBuddy server and try again.'
+      : `The AI service returned an error: ${error.message}`;
+    addMessage('Buddy',message);
+    console.error('Buddy chat request failed.',error);
+  } finally {
+    submitButton.disabled=false;
+  }
 });
 document.addEventListener('keydown',event=>{
   if(event.code!=='Space'||event.target.closest('input,button,textarea')||settingsOpen)return;

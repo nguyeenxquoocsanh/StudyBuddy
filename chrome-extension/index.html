@@ -55,7 +55,7 @@
       <div class="chat-log" id="chat-log" role="log" aria-live="polite"><p class="buddy"><b>Buddy</b> Need a plan or a gentle nudge? I'm here.</p></div>
       <form class="chat-form" id="chat-form"><input id="chat-input" aria-label="Ask your companion" placeholder="Ask Buddy for a nudge..." autocomplete="off" /><button type="submit" aria-label="Send message">↗</button></form>
     </section>
-    <footer><span>FOCUS MODE</span><span>SPACE TO START</span><span>v3.5.1</span></footer>
+    <footer><span>FOCUS MODE</span><span>SPACE TO START</span><span>v3.6.0</span></footer>
   </section>
 
   <section id="settings-panel" hidden aria-label="Companion settings">
@@ -72,8 +72,9 @@
       <button class="secondary" id="reset" type="button">Reset position</button>
       <button class="primary" id="showNow" type="button">Show mascot on webpages</button>
     </div>
-    <p class="settings-note">The mascot appears when the first quest starts and stays visible while tasks remain queued. Pausing stops HP and EXP updates; finishing a task awards 25 EXP and pauses the next quest. Every 50 EXP grants a level and one coin.</p>
+    <p class="settings-note">The mascot appears when the first quest starts and stays visible while tasks remain queued. Pausing or timing out costs 10 HP and resets your streak; finishing a task awards 25 EXP. Every 50 EXP grants a level and one coin.</p>
     <p class="settings-note">Health loses 2 HP every 3 seconds after 15 seconds of continuous mascot idle. Sustained keyboard/mouse activity regenerates 1 HP every 3 seconds after 5 seconds. At 0 HP, the timer pauses with time saved; start the quest to restore Buddy and resume.</p>
+    <p class="settings-note">Buddy Chat uses a local Gemini service. Start it with your <code>GEMINI_API_KEY</code> set in the server environment; chat messages are sent to Google's Gemini API.</p>
     <p class="settings-note">If missing on a site: Chrome Extensions → Details → Site access → On all sites. Chrome's own pages are restricted.</p>
     <button class="secondary back-button" id="back-to-dashboard" type="button">← Back to dashboard</button>
   </section>

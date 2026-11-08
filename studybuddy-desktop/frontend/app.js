@@ -2,7 +2,6 @@
 
 const $ = (id) => document.getElementById(id);
 const STORAGE_KEY = "studybuddy-state";
-const SESSION_MS = 25 * 60 * 1000;
 const TASK_LIMIT = 3;
 const MAX_XP = 50;
 const MAX_HP = 50;
@@ -12,15 +11,19 @@ const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 function createDefaultState() {
   return {
     version: 2,
-    pet: { hp: MAX_HP, maxHp: MAX_HP, xp: 0, xpNext: MAX_XP, level: 1 },
+    pet: { hp: MAX_HP, maxHp: MAX_HP, xp: 0, xpNext: MAX_XP, level: 1, coins: 0 },
     study: {
       tasks: [],
       activeId: null,
       running: false,
       endAt: 0,
-      remainingMs: SESSION_MS,
+      remainingMs: 0,
       started: false,
       streak: 0,
+      mascotDeployed: false,
+      koPaused: false,
+      reviveNonce: 0,
+      lastFinishEmptiedAt: 0,
     },
     settings: { enabled: true, paused: false, speed: 1.5, size: 100, darkMode: false },
     hiddenForSession: false,
@@ -59,6 +62,7 @@ function normalizeState(saved) {
         xp: totalXp % MAX_XP,
         xpNext: MAX_XP,
         level: Math.floor(totalXp / MAX_XP) + 1,
+        coins: 0,
       },
     };
   }
@@ -70,10 +74,17 @@ function normalizeState(saved) {
     ? saved.study.activeId
     : (tasks[0]?.id ?? null);
   const activeTask = tasks.find((task) => task.id === activeId);
-  const duration = (activeTask?.minutes ?? 25) * 60_000;
+  const duration = activeTask ? activeTask.minutes * 60_000 : 0;
   const remainingMs = clamp(finite(saved.study?.remainingMs, duration), 0, duration);
-  const running = Boolean(saved.study?.running && activeTask && remainingMs > 0);
-  const endAt = running ? Math.max(Date.now(), finite(saved.study?.endAt, Date.now())) : 0;
+  const petHp = clamp(finite(saved.pet?.hp, MAX_HP), 0, MAX_HP);
+  const timerWasRunning = Boolean(saved.study?.running && activeTask);
+  const koPaused = Boolean(saved.study?.koPaused || (timerWasRunning && petHp <= 0));
+  const savedEndAt = finite(saved.study?.endAt, Date.now());
+  const running = Boolean(timerWasRunning && petHp > 0 && remainingMs > 0);
+  const endAt = running ? Math.max(Date.now(), savedEndAt) : 0;
+  const pausedRemainingMs = timerWasRunning && petHp <= 0
+    ? clamp(savedEndAt - Date.now(), 0, duration)
+    : remainingMs;
   const petXp = Math.max(0, Math.floor(finite(saved.pet?.xp, 0)));
   const petLevel = Math.max(1, Math.floor(finite(saved.pet?.level, 1)));
   const totalXp = (petLevel - 1) * MAX_XP + petXp;
@@ -81,20 +92,26 @@ function normalizeState(saved) {
   return {
     version: 2,
     pet: {
-      hp: clamp(finite(saved.pet?.hp, MAX_HP), 0, MAX_HP),
+      hp: petHp,
       maxHp: MAX_HP,
       xp: totalXp % MAX_XP,
       xpNext: MAX_XP,
       level: Math.floor(totalXp / MAX_XP) + 1,
+      coins: Math.max(0, Math.floor(finite(saved.pet?.coins, 0))),
     },
     study: {
       tasks,
       activeId,
       running,
       endAt,
-      remainingMs: running ? remainingMs : clamp(remainingMs, 0, duration),
+      remainingMs: running ? remainingMs : clamp(pausedRemainingMs, 0, duration),
       started: Boolean(saved.study?.started && activeTask),
       streak: Math.max(0, Math.floor(finite(saved.study?.streak, 0))),
+      mascotDeployed: Boolean(tasks.length && (saved.study?.mascotDeployed
+        ?? (saved.study?.started || saved.study?.running))),
+      koPaused,
+      reviveNonce: Math.max(0, finite(saved.study?.reviveNonce, 0)),
+      lastFinishEmptiedAt: Math.max(0, finite(saved.study?.lastFinishEmptiedAt, 0)),
     },
     settings: {
       enabled: saved.settings?.enabled !== false,
@@ -123,6 +140,8 @@ let firstActivityAt = 0;
 let lastActivityEventAt = 0;
 let activityEvents = 0;
 let lastPetMood = "";
+let draggedTaskId = null;
+let lastRenderedLevel = null;
 
 function showMessage(message, isError = false) {
   const element = $("queue-message");
@@ -143,7 +162,11 @@ function companionState() {
   return {
     running: state.study.running,
     endAt: state.study.endAt,
-    visible: state.study.running && state.settings.enabled && !state.hiddenForSession,
+    visible: (state.study.mascotDeployed || state.study.koPaused)
+      && state.settings.enabled && !state.hiddenForSession,
+    mascotDeployed: state.study.mascotDeployed,
+    koPaused: state.study.koPaused,
+    lastFinishEmptiedAt: state.study.lastFinishEmptiedAt,
     pet: state.pet,
     settings: state.settings,
     hiddenForSession: state.hiddenForSession,
@@ -201,12 +224,22 @@ function loadState() {
 
 function renderPet() {
   const { hp, maxHp, xp, level } = state.pet;
+  const leveledUp = lastRenderedLevel !== null && state.pet.level > lastRenderedLevel;
+  lastRenderedLevel = state.pet.level;
   $("hp-fill").style.width = `${100 * hp / Math.max(maxHp, 1)}%`;
   $("hp-fill").parentElement.setAttribute("aria-valuenow", String(hp));
   $("pet-condition").textContent = hp <= 0 ? "KO" : hp < 15 ? "LOW" : "HEALTHY";
   $("xp-fill").style.width = `${100 * xp / MAX_XP}%`;
   $("xp-fill").parentElement.setAttribute("aria-valuenow", String(xp));
   $("level-label").textContent = `LEVEL ${level}`;
+  $("coin-count").textContent = String(state.pet.coins);
+  if (leveledUp) {
+    const wallet = $("coin-count").parentElement;
+    wallet.classList.remove("level-up");
+    void wallet.offsetWidth;
+    wallet.classList.add("level-up");
+    setTimeout(() => wallet.classList.remove("level-up"), 900);
+  }
   if (hp <= 0) {
     $("mascot-preview").src = "sprites/dead_0.png";
   } else {
@@ -258,6 +291,58 @@ function renderQueue() {
     remove.setAttribute("aria-label", `Remove ${task.title}`);
     remove.disabled = state.study.running && task.id === state.study.activeId;
     remove.addEventListener("click", () => removeTask(task.id));
+    const canDrag = state.study.tasks.length > 1
+      && !(state.study.started && task.id === state.study.activeId);
+    item.draggable = canDrag;
+    item.dataset.taskId = task.id;
+    if (canDrag) {
+      item.classList.add("reorderable");
+      item.title = "Drag to change task order";
+      item.setAttribute("aria-label", `Drag to reorder ${task.title}`);
+      const grip = document.createElement("span");
+      grip.className = "drag-grip";
+      grip.textContent = "⠿";
+      grip.setAttribute("aria-hidden", "true");
+      item.prepend(grip);
+      item.addEventListener("dragstart", (event) => {
+        draggedTaskId = task.id;
+        item.classList.add("dragging");
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", task.id);
+      });
+      item.addEventListener("dragend", () => {
+        draggedTaskId = null;
+        document.querySelectorAll("#task-list li").forEach((row) => {
+          row.classList.remove("dragging", "drag-target");
+        });
+      });
+    }
+    item.addEventListener("dragover", (event) => {
+      if (!draggedTaskId || draggedTaskId === task.id
+          || (state.study.started && task.id === state.study.activeId)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      item.classList.add("drag-target");
+    });
+    item.addEventListener("dragleave", () => item.classList.remove("drag-target"));
+    item.addEventListener("drop", (event) => {
+      event.preventDefault();
+      item.classList.remove("drag-target");
+      const fromId = draggedTaskId;
+      draggedTaskId = null;
+      if (!fromId || fromId === task.id) return;
+      const ids = state.study.tasks.map((queuedTask) => queuedTask.id);
+      const from = ids.indexOf(fromId);
+      const target = ids.indexOf(task.id);
+      if (from < 0 || target < 0) return;
+      const rect = item.getBoundingClientRect();
+      const insertAfter = event.clientY >= rect.top + rect.height / 2;
+      const [moved] = ids.splice(from, 1);
+      let destination = target + (insertAfter ? 1 : 0);
+      if (from < destination) destination--;
+      ids.splice(destination, 0, moved);
+      reorderTasks(ids);
+    });
     item.append(number, details, remove);
     list.append(item);
   });
@@ -275,18 +360,20 @@ function remainingTime() {
 
 function renderStudy() {
   const task = currentTask();
-  const duration = (task?.minutes ?? 25) * 60_000;
-  const remaining = remainingTime();
+  const duration = task ? task.minutes * 60_000 : 0;
+  const remaining = task ? remainingTime() : 0;
   const seconds = Math.ceil(remaining / 1000);
   $("timer").textContent = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-  const progress = clamp(100 * (1 - remaining / duration), 0, 100);
+  const progress = task ? clamp(100 * (1 - remaining / duration), 0, 100) : 0;
   $("progress").style.width = `${progress}%`;
   $("progress").parentElement.setAttribute("aria-valuenow", String(Math.round(progress)));
   $("quest-name").textContent = task?.title ?? "Add a task to begin";
-  $("session-label").textContent = `${task?.minutes ?? 25} MIN FOCUS SESSION`;
+  $("session-label").textContent = task ? `${task.minutes} MIN FOCUS SESSION` : "NO TASK SELECTED";
   $("streak").textContent = `STREAK ${String(state.study.streak).padStart(2, "0")}`;
   const status = state.study.running
     ? "LOCKED IN"
+    : state.study.koPaused
+    ? "KO — PAUSED"
     : task && remaining === 0
       ? "TIME UP"
       : task && remaining < duration
@@ -294,6 +381,7 @@ function renderStudy() {
         : "READY";
   $("status-chip").textContent = status;
   $("status-chip").classList.toggle("active", state.study.running);
+  $("status-chip").classList.toggle("ko", state.study.koPaused);
   $("start").disabled = state.study.running || !task;
   $("pause").disabled = !state.study.running;
   $("finish").disabled = !task || !state.study.started || (!state.study.running && remaining > 0);
@@ -368,8 +456,29 @@ function removeTask(id) {
   }
   if (state.study.activeId === id) {
     state.study.activeId = state.study.tasks[0]?.id ?? null;
-    state.study.remainingMs = (state.study.tasks[0]?.minutes ?? 25) * 60_000;
+    state.study.remainingMs = (state.study.tasks[0]?.minutes ?? 0) * 60_000;
     state.study.started = false;
+  }
+  if (!state.study.tasks.length) state.study.mascotDeployed = false;
+  commit();
+}
+
+function reorderTasks(ids) {
+  const existingIds = state.study.tasks.map((task) => task.id);
+  if (ids.length !== existingIds.length || new Set(ids).size !== ids.length
+      || ids.some((id) => !existingIds.includes(id))) {
+    showMessage("Task order is invalid. Refresh the queue and try again.", true);
+    return;
+  }
+  if (state.study.started && ids[0] !== state.study.activeId) {
+    showMessage("The active task must stay first after it has started.", true);
+    return;
+  }
+  const tasksById = new Map(state.study.tasks.map((task) => [task.id, task]));
+  state.study.tasks = ids.map((id) => tasksById.get(id));
+  if (!state.study.started) {
+    state.study.activeId = state.study.tasks[0]?.id ?? null;
+    state.study.remainingMs = (state.study.tasks[0]?.minutes ?? 0) * 60_000;
   }
   commit();
 }
@@ -382,9 +491,19 @@ function startStudy() {
     return;
   }
   if (state.study.running) return;
+  if (state.study.koPaused || state.pet.hp <= 0) {
+    state.pet.hp = state.pet.maxHp;
+    state.study.koPaused = false;
+    state.study.reviveNonce = Date.now();
+  }
+  const currentIndex = state.study.tasks.findIndex((queuedTask) => queuedTask.id === task.id);
+  if (currentIndex > 0) {
+    state.study.tasks = [task, ...state.study.tasks.filter((queuedTask) => queuedTask.id !== task.id)];
+  }
   if (state.study.remainingMs <= 0) state.study.remainingMs = task.minutes * 60_000;
   state.study.running = true;
   state.study.started = true;
+  state.study.mascotDeployed = true;
   state.study.endAt = Date.now() + state.study.remainingMs;
   state.hiddenForSession = false;
   clearHealthClocks();
@@ -398,6 +517,7 @@ function pauseStudy() {
   state.study.running = false;
   state.study.endAt = 0;
   penalizeInterruptedTask();
+  if (state.pet.hp <= 0) state.study.koPaused = true;
   clearHealthClocks();
   commit("Paused quest: -10 HP and your focus streak reset.");
 }
@@ -409,7 +529,9 @@ function penalizeInterruptedTask() {
 
 function grantXp(amount) {
   const total = state.pet.xp + amount;
-  state.pet.level += Math.floor(total / MAX_XP);
+  const levelsGained = Math.floor(total / MAX_XP);
+  state.pet.level += levelsGained;
+  state.pet.coins += levelsGained;
   state.pet.xp = total % MAX_XP;
 }
 
@@ -430,12 +552,16 @@ function finishTask() {
   }
   state.study.tasks = state.study.tasks.filter((item) => item.id !== task.id);
   state.study.activeId = state.study.tasks[0]?.id ?? null;
-  state.study.remainingMs = (state.study.tasks[0]?.minutes ?? 25) * 60_000;
+  state.study.remainingMs = (state.study.tasks[0]?.minutes ?? 0) * 60_000;
   state.study.started = false;
   state.study.running = false;
   state.study.endAt = 0;
   state.study.streak += 1;
   grantXp(25);
+  if (!state.study.tasks.length) {
+    state.study.mascotDeployed = false;
+    state.study.lastFinishEmptiedAt = Date.now();
+  }
   state.hiddenForSession = false;
   clearHealthClocks();
   commit("Quest finished! You earned +25 EXP. Your next task is ready.");
@@ -456,12 +582,18 @@ function addMessage(author, text, className = "") {
   $("chat-log").scrollTop = $("chat-log").scrollHeight;
 }
 
-function respond(text) {
-  const lower = text.toLowerCase();
-  if (lower.includes("plan")) return "Try 20 minutes reading, 5 minutes recall, then a short break.";
-  if (lower.includes("tired") || lower.includes("break")) return "A short rest, water, and a stretch may help you refocus.";
-  if (lower.includes("study") || lower.includes("focus")) return "Choose one specific task. Start the timer, then work on that task only.";
-  return "Pick one small next step and give it a try.";
+async function askBuddy(text) {
+  const response = await fetch("http://127.0.0.1:8000/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: text }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.detail || "AI request failed.");
+  if (typeof result.reply !== "string" || !result.reply.trim()) {
+    throw new Error("The AI service returned an empty reply.");
+  }
+  return result.reply;
 }
 
 function handleBehavior(payload) {
@@ -510,8 +642,16 @@ function handleBehavior(payload) {
   const loss = Math.max(0, due - idleTicks);
   idleTicks = due;
   if (loss) {
-    state.pet.hp = Math.max(0, state.pet.hp - loss);
+    state.pet.hp = Math.max(0, state.pet.hp - loss * 2);
+    if (state.pet.hp <= 0) {
+      state.study.remainingMs = Math.max(0, state.study.endAt - Date.now());
+      state.study.running = false;
+      state.study.endAt = 0;
+      state.study.koPaused = true;
+      clearHealthClocks();
+    }
     renderPet();
+    renderStudy();
     saveState();
   }
 }
@@ -565,6 +705,7 @@ function expireStudy() {
   state.study.endAt = 0;
   state.study.remainingMs = 0;
   penalizeInterruptedTask();
+  if (state.pet.hp <= 0) state.study.koPaused = true;
   clearHealthClocks();
   addMessage("Buddy", "Time is up! You lost 10 HP and your focus streak reset. Start the task again when you are ready.");
   commit("Time is up: -10 HP and your focus streak reset.");
@@ -604,6 +745,10 @@ $("size").addEventListener("input", (event) => {
 });
 $("restoreHp").addEventListener("click", () => {
   state.pet.hp = MAX_HP;
+  if (state.study.koPaused) {
+    state.study.koPaused = false;
+    state.study.reviveNonce = Date.now();
+  }
   clearHealthClocks();
   commit("Health restored.");
 });
@@ -616,13 +761,33 @@ $("showNow").addEventListener("click", () => {
   state.hiddenForSession = false;
   commit();
 });
-$("chat-form").addEventListener("submit", (event) => {
+$("chat-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const text = $("chat-input").value.trim();
   if (!text) return;
   addMessage("You", text, "you");
   $("chat-input").value = "";
-  addMessage("Buddy", respond(text));
+  const submitButton = $("chat-form").querySelector("button");
+  submitButton.disabled = true;
+  const thinking = document.createElement("p");
+  thinking.className = "buddy thinking";
+  thinking.textContent = "Buddy Thinking...";
+  $("chat-log").append(thinking);
+  $("chat-log").scrollTop = $("chat-log").scrollHeight;
+  try {
+    const reply = await askBuddy(text);
+    thinking.remove();
+    addMessage("Buddy", reply);
+  } catch (error) {
+    thinking.remove();
+    const message = error instanceof TypeError
+      ? "I cannot reach the AI server. Start the local StudyBuddy server and try again."
+      : `The AI service returned an error: ${error.message}`;
+    addMessage("Buddy", message);
+    console.error("Buddy chat request failed.", error);
+  } finally {
+    submitButton.disabled = false;
+  }
 });
 document.addEventListener("keydown", (event) => {
   if (event.code !== "Space" || event.target.closest("input,button,textarea") || settingsOpen) return;

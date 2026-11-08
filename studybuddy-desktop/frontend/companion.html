@@ -15,9 +15,11 @@
       <div id="hud" aria-label="Buddy progress">
         <div class="meter-row"><span>HP</span><div class="meter" role="progressbar" aria-label="Buddy health" aria-valuemin="0" aria-valuemax="50" aria-valuenow="50"><div id="hp-fill"></div></div></div>
         <div class="meter-row"><span>XP</span><div class="meter" role="progressbar" aria-label="Experience toward next level" aria-valuemin="0" aria-valuemax="50" aria-valuenow="0"><div id="xp-fill"></div></div></div>
+        <span id="level-badge">LV.1</span>
       </div>
       <div id="pet" title="Drag me • Right-click for options">
         <img id="sprite" src="sprites/idle_0.png" alt="StudyBuddy companion" draggable="false" />
+        <div id="level-effect" aria-hidden="true"><span>LEVEL UP!</span><span>+1 COIN</span></div>
       </div>
       <div id="menu" hidden>
         <button type="button" data-action="pause-walking">Pause walking</button>

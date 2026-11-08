@@ -1,12 +1,24 @@
 # StudyBuddy Desktop
 
-StudyBuddy Desktop is a standalone Tauri app based on StudyBuddy Companion 3.3. It includes a three-task quest board, focus timer, health and experience progression, scripted buddy prompts, and an animated desktop companion.
+StudyBuddy Desktop is a standalone Tauri app that matches the Chrome extension's quest board, focus timer, health and experience progression, coin rewards, reorderable queue, and Buddy Chat. Its animated companion floats above other apps while tasks remain queued after the first start. The desktop app uses the extension's 1–240 minute task range, 25 EXP task reward, and 50 EXP per level. Pausing a running task or letting it time out costs 10 HP and resets the focus streak. A timed-out task must be restarted before it can be finished for EXP.
 
-The companion floats above other apps on the primary display while a quest is running. Drag it to move it; right-click for walking, position-reset, and hide controls. The desktop app uses the extension's 1–240 minute task range, 25 EXP task reward, and 50 EXP per level. Pausing a running task or letting it time out costs 10 HP and resets the focus streak. A timed-out task must be restarted before it can be finished for EXP.
+Drag the companion to move it; right-click for walking, position-reset, and hide controls. Desktop state is saved locally in the app's WebView storage and is not synchronized with Chrome. Existing desktop XP and energy are migrated to XP/levels and health the first time the new version runs; existing saves start with zero coins. Health uses Windows' last-input timestamp to detect idle/activity periods; the app does not record keystrokes or their contents.
 
-Desktop state is saved locally in the app's WebView storage and is not synchronized with Chrome. Existing desktop XP and energy are migrated to XP/levels and health the first time the new version runs; treats are retired. Buddy chat uses local scripted prompts. Health uses Windows' last-input timestamp to detect idle/activity periods; the app does not record keystrokes or their contents. There are no remote services.
+Buddy Chat uses the same local Gemini service as the Chrome extension. Chat messages are sent to Google's Gemini API; the API key remains in the server process environment and is not saved by the desktop app.
 
 Toggle between light and dark mode in Companion settings; the selected theme is saved with desktop state.
+
+## Run Buddy Chat
+
+From the repository root, install the Python service dependencies and start the API server in PowerShell:
+
+```powershell
+python -m pip install -r server/requirements.txt
+$env:GEMINI_API_KEY = "your Gemini API key"
+python -m uvicorn main:app --app-dir server --host 127.0.0.1 --port 8000
+```
+
+Leave that terminal open while using Buddy Chat. The main desktop app and its companion continue to work if the chat service is not running.
 
 ## Windows prerequisites
 

@@ -33,6 +33,10 @@ let firstActivityAt = 0;
 let lastActivityEventAt = 0;
 let activityEvents = 0;
 let lastResetRequest = null;
+let lastFinishEmptiedAt = 0;
+let fadeTimer = 0;
+let lastLevel = null;
+let effectTimer = 0;
 
 function showError(error) {
   console.error(error);
@@ -79,6 +83,17 @@ function renderBars() {
   $("hp-fill").parentElement.setAttribute("aria-valuenow", String(pet.hp));
   $("xp-fill").style.width = `${100 * pet.xp / Math.max(1, pet.xpNext)}%`;
   $("xp-fill").parentElement.setAttribute("aria-valuenow", String(pet.xp));
+  const level = Math.max(1, Number(pet.level) || 1);
+  $("level-badge").textContent = `LV.${level}`;
+  if (lastLevel !== null && level > lastLevel) {
+    const effect = $("level-effect");
+    effect.classList.remove("show");
+    void effect.offsetWidth;
+    effect.classList.add("show");
+    clearTimeout(effectTimer);
+    effectTimer = setTimeout(() => effect.classList.remove("show"), 1100);
+  }
+  lastLevel = level;
 }
 
 function maxX() {
@@ -126,33 +141,57 @@ async function moveWindow() {
   }
 }
 
-function updateVisibility() {
-  const visible = Boolean(
-    state?.running
-    && state?.endAt > Date.now()
-    && state?.settings?.enabled
-    && !state?.hiddenForSession,
-  );
-  if (visible === !hidden) return;
-  hidden = !visible;
-  invoke("set_companion_visible", { visible }).catch(() => {});
+function updateVisibility(fadeOut = false) {
+  const visible = Boolean(state?.visible);
+  const stage = $("stage");
+  if (visible) {
+    clearTimeout(fadeTimer);
+    stage.style.transition = "";
+    stage.style.opacity = "";
+    if (hidden) {
+      hidden = false;
+      invoke("set_companion_visible", { visible: true }).catch(() => {});
+    }
+    return;
+  }
+  if (fadeOut && !hidden) {
+    clearTimeout(fadeTimer);
+    stage.style.transition = "opacity 650ms ease";
+    requestAnimationFrame(() => { stage.style.opacity = "0"; });
+    fadeTimer = setTimeout(() => {
+      stage.style.transition = "";
+      stage.style.opacity = "";
+      if (!state?.visible && !hidden) {
+        hidden = true;
+        invoke("set_companion_visible", { visible: false }).catch(() => {});
+      }
+    }, 650);
+    return;
+  }
+  if (!hidden) {
+    hidden = true;
+    invoke("set_companion_visible", { visible: false }).catch(() => {});
+  }
 }
 
 function applyState(next) {
-  const wasRunning = state?.running;
+  const wasDeployed = Boolean(state?.mascotDeployed);
+  const finishTimestamp = Number(next.lastFinishEmptiedAt) || 0;
+  const finishedLast = wasDeployed && !next.mascotDeployed
+    && finishTimestamp > 0 && finishTimestamp !== lastFinishEmptiedAt;
   state = next;
+  document.documentElement.dataset.theme = state.settings.darkMode ? "dark" : "light";
+  lastFinishEmptiedAt = finishTimestamp;
   renderBars();
   setTransform();
-  updateVisibility();
   if (state.resetRequest !== lastResetRequest) {
     lastResetRequest = state.resetRequest;
     resetPosition();
-  } else if (state.running && !wasRunning) {
+  } else if (state.mascotDeployed && !wasDeployed) {
     resetPosition();
   }
   if (state.endAt <= Date.now()) {
     state.running = false;
-    updateVisibility();
   }
   if (state.pet.hp <= 0) {
     behavior = "dead";
@@ -165,6 +204,7 @@ function applyState(next) {
     frame = 0;
     setSprite();
   }
+  updateVisibility(finishedLast);
 }
 
 function selectBehavior() {
@@ -181,7 +221,7 @@ function selectBehavior() {
 }
 
 function animate() {
-  if (!state?.running || !state?.settings?.enabled || state.hiddenForSession
+  if (!state?.mascotDeployed || !state?.settings?.enabled || state.hiddenForSession
       || state.settings.paused || dragging || state.pet.hp <= 0) {
     if (state?.pet?.hp <= 0 && spriteState() !== "dead") setSprite();
     behavior = state?.pet?.hp <= 0 ? "dead" : "idle";
@@ -263,7 +303,7 @@ function pointOnDesktop(event) {
 }
 
 $("pet").addEventListener("pointerdown", (event) => {
-  if (event.button !== 0 || !state?.running || (state.pet.hp ?? 0) <= 0) return;
+  if (event.button !== 0 || !state?.mascotDeployed || (state.pet.hp ?? 0) <= 0) return;
   event.preventDefault();
   $("menu").hidden = true;
   dragging = true;
@@ -336,7 +376,7 @@ async function initialize() {
       const now = Date.now();
       if (now - lastPositionAt >= 33) {
         lastPositionAt = now;
-        if (state?.running && !hidden && !state.settings.paused) moveWindow();
+        if (state?.mascotDeployed && !hidden && !state.settings.paused) moveWindow();
       }
     }, 16);
     setInterval(() => {
