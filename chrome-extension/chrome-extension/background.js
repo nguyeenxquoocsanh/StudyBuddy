@@ -74,6 +74,8 @@ function cleanStudy(raw) {
       (x.mascotDeployed == null && (x.started === true || x.running === true))),
     // Used only to trigger a fade after the final task is completed.
     lastFinishEmptiedAt: Math.max(0,finite(x.lastFinishEmptiedAt,0)),
+    koPaused: x.koPaused === true,
+    reviveNonce: Math.max(0,finite(x.reviveNonce,0)),
     streak:Math.max(0,Math.floor(finite(x.streak,0)))};
 }
 async function readStudy() {
@@ -132,6 +134,12 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
       const pet=await readPet();
       pet.hp=pet.maxHp;
       clearHealthClocks();
+      const study=await readStudy();
+      if(study.koPaused) {
+        study.koPaused=false;
+        study.reviveNonce=Date.now();
+        await writeStudy(study);
+      }
       return {ok:true,stats:await writePet(pet)};
     }),reply);
   }
@@ -190,6 +198,13 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
         const current=study.tasks.find(t=>t.id===study.activeId);
         if(!current){success=false;error='Add a task first.';}
         else if(!study.running) {
+          if(study.koPaused || stats.hp <= 0) {
+            // Explicit Start Session revives the KO mascot and resets its animation state.
+            stats.hp = stats.maxHp;
+            stats = await writePet(stats);
+            study.reviveNonce = Date.now();
+            study.koPaused = false;
+          }
           if(study.remainingMs<=0) study.remainingMs=current.minutes*60000;
           study.running=true;
           study.started=true;
@@ -242,7 +257,16 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
         return {ok:true};
       }
       const stats=await readPet();
-      if(stats.hp<=0){clearHealthClocks();return {ok:true,stats};}
+      if(stats.hp<=0) {
+        study.remainingMs=Math.max(0,study.endAt-Date.now());
+        study.running=false;
+        study.endAt=0;
+        study.koPaused=true;
+        await writeStudy(study);
+        await syncAlarm(study);
+        clearHealthClocks();
+        return {ok:true,stats};
+      }
       const now=Date.now();
       if(msg.activity===true){
         idleOwner=null;idleSince=0;idleReport=0;idleTicks=0;
@@ -260,7 +284,20 @@ chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
         idleReport=now;
         const due=Math.max(0,Math.floor((now-idleSince-15000)/3000));
         const loss=Math.max(0,due-idleTicks);idleTicks=due;
-        if(loss){stats.hp=Math.max(0,stats.hp-loss*2);await writePet(stats);}
+        if(loss) {
+          stats.hp=Math.max(0,stats.hp-loss*2);
+          await writePet(stats);
+          if(stats.hp===0) {
+            // Preserve the exact remaining countdown rather than resetting its duration.
+            study.remainingMs=Math.max(0,study.endAt-Date.now());
+            study.running=false;
+            study.endAt=0;
+            study.koPaused=true;
+            await writeStudy(study);
+            await syncAlarm(study);
+            clearHealthClocks();
+          }
+        }
       }
       return {ok:true,stats};
     }),reply);

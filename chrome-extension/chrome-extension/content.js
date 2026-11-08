@@ -35,6 +35,7 @@
   let fadingOut = false;
   let fadeTimer = 0;
   let lastFinishEmptiedAt = 0;
+  let lastReviveNonce = 0;
   let petStats = { hp: 50, maxHp: 50, xp: 0, xpNext: 50, level: 1 };
   let lastBehaviorReport = 0;
   let lastActivityAt = 0;
@@ -338,6 +339,9 @@
     const queued=Array.isArray(record?.tasks) && record.tasks.length>0;
     const deployed=queued && Boolean(record?.mascotDeployed ?? (record?.started || record?.running));
     const wasDeployed=mascotDeployed;
+    const reviveNonce=Number(record?.reviveNonce)||0;
+    const hasRevived = !initial && reviveNonce > lastReviveNonce && lastReviveNonce !== 0;
+    lastReviveNonce = reviveNonce;
     const fadeAt=Number(record?.lastFinishEmptiedAt)||0;
     const finishedLast= !initial && wasDeployed && !queued &&
       fadeAt>0 && fadeAt!==lastFinishEmptiedAt;
@@ -361,6 +365,16 @@
       press=null;
       pet.classList.remove("drag");
       menu.hidden=true;
+    }
+    if(hasRevived) {
+      isKo=false;
+      state="idle";
+      frame=0;
+      vy=0;
+      reactionUntil=0;
+      direction=Math.random()<0.5?-1:1;
+      nextDecision=ticks+90;
+      setSprite();
     }
     sessionRunning=nextRunning;
     mascotDeployed=deployed;

@@ -138,7 +138,7 @@ function renderStudy(s, updateQueue=true) {
   $('quest-name').textContent=task?.title||'Add a task to begin';
   $('session-label').textContent=task?`${task.minutes} MIN FOCUS SESSION`:'NO TASK SELECTED';
   $('streak').textContent=`STREAK ${String(study.streak).padStart(2,'0')}`;
-  $('status-chip').textContent=study.running?'LOCKED IN':task&&remaining===0?'TIME UP':task&&remaining<duration?'PAUSED':'READY';
+  $('status-chip').textContent=study.running?'LOCKED IN':study.koPaused?'KO — PAUSED':task&&remaining===0?'TIME UP':task&&remaining<duration?'PAUSED':'READY';
   $('status-chip').classList.toggle('active',study.running);
   $('start').disabled=study.running||!task;
   $('pause').disabled=!study.running;

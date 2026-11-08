@@ -72,3 +72,10 @@ To preserve existing stats, replace files in the previously loaded unpacked exte
 - HP gain/loss remains frozen whenever the focus session is not running.
 - The Pause walking setting can still pause the mascot animation independently.
 - Existing first-drop and final-task fade-out behavior are retained.
+
+## v3.5.1 — Auto-pause when KO and revival on Start
+- When HP reaches 0, pause the active task immediately, storing its remaining time.
+- Show the existing dead sprite. Movement stops while KO.
+- Press Start Session to restore HP to 50, return to idle animation, and resume the saved timer.
+- The mascot resumes where it was, without repeating its initial top-of-screen drop.
+- Tasks, EXP, level, coin wallet and between-task animations are preserved.

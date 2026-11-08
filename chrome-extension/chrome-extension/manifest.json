@@ -3,7 +3,7 @@
   "name": "StudyBuddy Companion",
   "short_name": "StudyBuddy",
   "description": "Study quests with a 3-task queue, 50-point EXP levels, focus-gated desktop mascot, and shared health.",
-  "version": "3.5.0",
+  "version": "3.5.1",
   "action": {
     "default_title": "StudyBuddy Companion",
     "default_popup": "index.html"
