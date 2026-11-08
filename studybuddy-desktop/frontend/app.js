@@ -140,7 +140,7 @@ let firstActivityAt = 0;
 let lastActivityEventAt = 0;
 let activityEvents = 0;
 let lastPetMood = "";
-let draggedTaskId = null;
+let pointerTaskDrag = null;
 let lastRenderedLevel = null;
 
 function showMessage(message, isError = false) {
@@ -293,56 +293,73 @@ function renderQueue() {
     remove.addEventListener("click", () => removeTask(task.id));
     const canDrag = state.study.tasks.length > 1
       && !(state.study.started && task.id === state.study.activeId);
-    item.draggable = canDrag;
     item.dataset.taskId = task.id;
     if (canDrag) {
       item.classList.add("reorderable");
-      item.title = "Drag to change task order";
+      item.title = "Drag the handle to change task order";
       item.setAttribute("aria-label", `Drag to reorder ${task.title}`);
       const grip = document.createElement("span");
       grip.className = "drag-grip";
       grip.textContent = "⠿";
       grip.setAttribute("aria-hidden", "true");
-      item.prepend(grip);
-      item.addEventListener("dragstart", (event) => {
-        draggedTaskId = task.id;
-        item.classList.add("dragging");
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/plain", task.id);
+      grip.title = "Drag to change task order";
+      grip.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        pointerTaskDrag = {
+          id: task.id,
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          active: false,
+          x: event.clientX,
+          y: event.clientY,
+        };
+        grip.setPointerCapture(event.pointerId);
       });
-      item.addEventListener("dragend", () => {
-        draggedTaskId = null;
+      grip.addEventListener("pointermove", (event) => {
+        if (!pointerTaskDrag || pointerTaskDrag.pointerId !== event.pointerId) return;
+        pointerTaskDrag.x = event.clientX;
+        pointerTaskDrag.y = event.clientY;
+        const distance = Math.hypot(
+          event.clientX - pointerTaskDrag.startX,
+          event.clientY - pointerTaskDrag.startY,
+        );
+        if (!pointerTaskDrag.active && distance < 5) return;
+        pointerTaskDrag.active = true;
+        item.classList.add("dragging");
+        const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("#task-list li");
+        document.querySelectorAll("#task-list li").forEach((row) => {
+          row.classList.toggle("drag-target", row === target && row.dataset.taskId !== task.id);
+        });
+      });
+      const finishPointerDrag = (event, commitOrder) => {
+        if (!pointerTaskDrag || pointerTaskDrag.pointerId !== event.pointerId) return;
+        const drag = pointerTaskDrag;
+        pointerTaskDrag = null;
         document.querySelectorAll("#task-list li").forEach((row) => {
           row.classList.remove("dragging", "drag-target");
         });
-      });
+        if (!commitOrder || !drag.active) return;
+        const target = document.elementFromPoint(drag.x, drag.y)?.closest("#task-list li");
+        const ids = state.study.tasks.map((queuedTask) => queuedTask.id);
+        const from = ids.indexOf(drag.id);
+        const targetIndex = target ? ids.indexOf(target.dataset.taskId) : -1;
+        if (from < 0 || targetIndex < 0 || from === targetIndex) return;
+        if (state.study.started && target.dataset.taskId === state.study.activeId) return;
+        const rect = target.getBoundingClientRect();
+        const insertAfter = drag.y >= rect.top + rect.height / 2;
+        const [moved] = ids.splice(from, 1);
+        let destination = targetIndex + (insertAfter ? 1 : 0);
+        if (from < destination) destination--;
+        ids.splice(destination, 0, moved);
+        reorderTasks(ids);
+      };
+      grip.addEventListener("pointerup", (event) => finishPointerDrag(event, true));
+      grip.addEventListener("pointercancel", (event) => finishPointerDrag(event, false));
+      grip.addEventListener("lostpointercapture", (event) => finishPointerDrag(event, false));
+      item.prepend(grip);
     }
-    item.addEventListener("dragover", (event) => {
-      if (!draggedTaskId || draggedTaskId === task.id
-          || (state.study.started && task.id === state.study.activeId)) return;
-      event.preventDefault();
-      event.dataTransfer.dropEffect = "move";
-      item.classList.add("drag-target");
-    });
-    item.addEventListener("dragleave", () => item.classList.remove("drag-target"));
-    item.addEventListener("drop", (event) => {
-      event.preventDefault();
-      item.classList.remove("drag-target");
-      const fromId = draggedTaskId;
-      draggedTaskId = null;
-      if (!fromId || fromId === task.id) return;
-      const ids = state.study.tasks.map((queuedTask) => queuedTask.id);
-      const from = ids.indexOf(fromId);
-      const target = ids.indexOf(task.id);
-      if (from < 0 || target < 0) return;
-      const rect = item.getBoundingClientRect();
-      const insertAfter = event.clientY >= rect.top + rect.height / 2;
-      const [moved] = ids.splice(from, 1);
-      let destination = target + (insertAfter ? 1 : 0);
-      if (from < destination) destination--;
-      ids.splice(destination, 0, moved);
-      reorderTasks(ids);
-    });
     item.append(number, details, remove);
     list.append(item);
   });
@@ -358,7 +375,7 @@ function remainingTime() {
     : Math.max(0, state.study.remainingMs);
 }
 
-function renderStudy() {
+function renderStudy(updateQueue = true) {
   const task = currentTask();
   const duration = task ? task.minutes * 60_000 : 0;
   const remaining = task ? remainingTime() : 0;
@@ -385,7 +402,7 @@ function renderStudy() {
   $("start").disabled = state.study.running || !task;
   $("pause").disabled = !state.study.running;
   $("finish").disabled = !task || !state.study.started || (!state.study.running && remaining > 0);
-  renderQueue();
+  if (updateQueue) renderQueue();
   renderMood();
 }
 
@@ -696,7 +713,7 @@ async function connectCompanion() {
 }
 
 function tick() {
-  if (!expireStudy()) renderStudy();
+  if (!expireStudy()) renderStudy(false);
 }
 
 function expireStudy() {

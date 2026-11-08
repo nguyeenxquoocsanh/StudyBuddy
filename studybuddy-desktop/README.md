@@ -2,7 +2,7 @@
 
 StudyBuddy Desktop is a standalone Tauri app that matches the Chrome extension's quest board, focus timer, health and experience progression, coin rewards, reorderable queue, and Buddy Chat. Its animated companion floats above other apps while tasks remain queued after the first start. The desktop app uses the extension's 1–240 minute task range, 25 EXP task reward, and 50 EXP per level. Pausing a running task or letting it time out costs 10 HP and resets the focus streak. A timed-out task must be restarted before it can be finished for EXP.
 
-Drag the companion to move it; right-click for walking, position-reset, and hide controls. Desktop state is saved locally in the app's WebView storage and is not synchronized with Chrome. Existing desktop XP and energy are migrated to XP/levels and health the first time the new version runs; existing saves start with zero coins. Health uses Windows' last-input timestamp to detect idle/activity periods; the app does not record keystrokes or their contents.
+Drag the companion to move it; right-click for walking, position-reset, and hide controls. Drag a task by its grip to reorder the queue. Desktop state is saved locally in the app's WebView storage and is not synchronized with Chrome. Existing desktop XP and energy are migrated to XP/levels and health the first time the new version runs; existing saves start with zero coins. Health uses Windows' last-input timestamp to detect idle/activity periods; the app does not record keystrokes or their contents.
 
 Buddy Chat uses the same local Gemini service as the Chrome extension. Chat messages are sent to Google's Gemini API; the API key remains in the server process environment and is not saved by the desktop app.
 

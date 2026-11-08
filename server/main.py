@@ -15,7 +15,7 @@ if not api_key:
 app = FastAPI(title="StudyBuddy API")
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^(chrome-extension://[a-p]{32}|http://tauri\.localhost)$",
+    allow_origin_regex=r"^(chrome-extension://[a-p]{32}|http://tauri\.localhost|http://127\.0\.0\.1:1430)$",
     allow_credentials=False,
     allow_methods=["POST"],
     allow_headers=["Content-Type"],
