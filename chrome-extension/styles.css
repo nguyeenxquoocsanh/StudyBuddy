@@ -1,0 +1,838 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  color-scheme: dark;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Lofi Cozy Dark Palette */
+  --bg-base: #171615;
+  --bg-surface: #201d1a;
+  --bg-surface-elevated: #282421;
+  --bg-surface-hover: #312d29;
+  --bg-well: #131211;
+  
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-medium: rgba(255, 255, 255, 0.12);
+  --border-focus: #73a588;
+  
+  /* Soft Earthy Accents */
+  --sage-light: #8fb89e;
+  --sage: #679b7b;
+  --sage-dark: #4b785d;
+  --sage-glow: rgba(103, 155, 123, 0.25);
+  
+  --terracotta-light: #e89179;
+  --terracotta: #d9745b;
+  --terracotta-dark: #b5523a;
+  --terracotta-glow: rgba(217, 116, 91, 0.25);
+  
+  --honey-light: #f3c46e;
+  --honey: #e5a745;
+  --honey-dark: #c28325;
+  --honey-glow: rgba(229, 167, 69, 0.25);
+  
+  /* Text & Ink */
+  --text-high: #f6f2ec;
+  --text-mid: #d6cebf;
+  --text-muted: #958c7e;
+  --text-dim: #6c6458;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Minimal Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-surface-elevated);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bg-surface-hover);
+}
+
+body {
+  margin: 0;
+  width: 410px;
+  max-height: 590px;
+  overflow-y: auto;
+  background-color: var(--bg-base);
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, rgba(103, 155, 123, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse at 80% 100%, rgba(229, 167, 69, 0.05) 0%, transparent 60%);
+  color: var(--text-mid);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+.app {
+  padding: 16px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+/* Added this rule to spread out the boxes: */
+#dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* <-- Adjust this number to increase or decrease space between boxes */
+}
+
+/* Topbar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-high);
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--sage-light) 0%, var(--sage) 100%);
+  color: #0e2015;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 2px 8px var(--sage-glow);
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(103, 155, 123, 0.12);
+  border: 1px solid rgba(103, 155, 123, 0.25);
+  color: var(--sage-light);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sage);
+  box-shadow: 0 0 8px var(--sage);
+}
+
+.icon-button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 9px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.icon-button:hover, .icon-button[aria-expanded="true"] {
+  background: var(--bg-surface-elevated);
+  color: var(--text-high);
+  border-color: var(--border-medium);
+}
+
+.icon-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Cozy Card Containers */
+.hero, .pet-bars, .quest-queue, .focus-card, .chat-card, #settings-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 15px 16px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+}
+
+/* Hero Section */
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--sage);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-high);
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-high);
+  letter-spacing: -0.01em;
+}
+
+.subhead {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+/* Mascot Frame */
+.mascot-frame {
+  width: 82px;
+  height: 82px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--bg-well);
+  border: 1px solid var(--border-subtle);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.mascot-frame img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+}
+
+/* Companion Health & EXP Bars */
+.pet-bars {
+  padding: 13px 15px;
+}
+
+.meter-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.meter-caption span:last-child {
+  color: var(--text-high);
+  font-weight: 700;
+}
+
+.xp-label {
+  margin-top: 10px;
+}
+
+/* Smooth Fluid Pill Meter */
+.meter {
+  height: 8px;
+  background: var(--bg-well);
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.meter > div {
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Terracotta Health Fill */
+.meter.hp > div {
+  background: linear-gradient(90deg, var(--terracotta-dark) 0%, var(--terracotta) 100%);
+  box-shadow: 0 0 8px var(--terracotta-glow);
+}
+
+/* Warm Honey EXP Fill */
+.meter.experience > div {
+  background: linear-gradient(90deg, var(--honey-dark) 0%, var(--honey) 100%);
+  box-shadow: 0 0 8px var(--honey-glow);
+}
+
+/* Quest Queue */
+.queue-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+#queue-count {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--bg-well);
+  border: 1px solid var(--border-subtle);
+  color: var(--sage);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.task-form {
+  display: grid;
+  gap: 6px;
+}
+
+.task-form > label, .task-form-bottom label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* Clean Input Fields */
+input[type="text"], input[type="number"] {
+  background: var(--bg-well);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  color: var(--text-high);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 8px 11px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+input[type="text"]::placeholder {
+  color: var(--text-dim);
+}
+
+input[type="text"]:focus, input[type="number"]:focus {
+  border-color: var(--sage);
+  background: var(--bg-base);
+  box-shadow: 0 0 0 3px var(--sage-glow);
+}
+
+.task-form-bottom {
+  display: grid;
+  grid-template-columns: auto 64px 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.task-form-bottom input {
+  padding: 8px 4px;
+  text-align: center;
+}
+
+/* Tactile Pill Buttons */
+button {
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  border-radius: 10px;
+  border: none;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+button:focus-visible {
+  box-shadow: 0 0 0 3px var(--sage-glow);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* Primary Button (Matcha Focus Green) */
+.primary {
+  background: linear-gradient(135deg, var(--sage-light) 0%, var(--sage) 100%);
+  color: #0b1a11;
+  font-weight: 700;
+  box-shadow: 0 2px 10px var(--sage-glow);
+  padding: 9px 14px;
+}
+
+.primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 4px 14px var(--sage-glow);
+}
+
+.primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Secondary Button (Soft Warm Neutral) */
+.secondary {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
+  color: var(--text-mid);
+  padding: 9px 14px;
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  color: var(--text-high);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Finished Button (Warm Amber Accent) */
+.finished {
+  background: rgba(229, 167, 69, 0.15);
+  border: 1px solid rgba(229, 167, 69, 0.3);
+  color: var(--honey-light);
+  padding: 9px 14px;
+}
+
+.finished:hover:not(:disabled) {
+  background: rgba(229, 167, 69, 0.25);
+  border-color: rgba(229, 167, 69, 0.5);
+}
+
+/* Task List Items */
+.task-list {
+  list-style: none;
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.task-list li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border-radius: 11px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.15s ease;
+}
+
+.task-list li:hover {
+  border-color: var(--border-medium);
+}
+
+.task-list li.current {
+  border-color: rgba(103, 155, 123, 0.4);
+  background: rgba(103, 155, 123, 0.08);
+  box-shadow: 0 2px 10px rgba(103, 155, 123, 0.1);
+}
+
+.task-number {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sage);
+  min-width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  background: var(--bg-well);
+  border-radius: 6px;
+}
+
+.task-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-details strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-high);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.task-details small {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+/* Task Remove Button */
+.task-remove {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.task-remove:hover:not(:disabled) {
+  background: rgba(217, 116, 91, 0.15);
+  color: var(--terracotta-light);
+}
+
+.empty-queue {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 8px 0;
+}
+
+.queue-message {
+  min-height: 0;
+  margin: 6px 0 0;
+  color: var(--honey-light);
+  font-size: 11px;
+}
+
+/* Focus Card */
+.card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Status Chip */
+.status-chip, .chat-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-medium);
+  color: var(--text-mid);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.status-chip.active {
+  background: rgba(103, 155, 123, 0.18);
+  border-color: rgba(103, 155, 123, 0.4);
+  color: var(--sage-light);
+}
+
+/* Large Serene Timer */
+.timer {
+  margin: 14px 0 10px;
+  font-size: 54px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-align: center;
+  color: var(--text-high);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* Timer Progress */
+.progress {
+  height: 7px;
+  background: var(--bg-well);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--sage-dark) 0%, var(--sage) 100%);
+  box-shadow: 0 0 8px var(--sage-glow);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timer-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+#streak {
+  color: var(--honey);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.actions button {
+  flex: 1;
+  font-size: 11.5px;
+  padding: 10px 8px;
+  white-space: nowrap;
+}
+
+/* Mood / Stats */
+.stats {
+  display: block;
+}
+
+.stat {
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat span {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.stat strong {
+  color: var(--text-high);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Buddy Chat */
+.chat-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-log {
+  min-height: 48px;
+  max-height: 105px;
+  overflow-y: auto;
+  margin: 10px 0 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-log p {
+  margin: 0;
+  padding: 8px 11px;
+  border-radius: 12px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-mid);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.chat-log b {
+  color: var(--sage);
+  font-weight: 700;
+}
+
+.chat-log .you {
+  background: rgba(229, 167, 69, 0.1);
+  border-color: rgba(229, 167, 69, 0.2);
+  align-self: flex-end;
+}
+
+.chat-log .you b {
+  color: var(--honey-light);
+}
+
+.chat-form {
+  display: flex;
+  gap: 6px;
+}
+
+.chat-form input {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-form button {
+  width: 38px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
+  color: var(--sage);
+  font-size: 14px;
+  border-radius: 9px;
+}
+
+.chat-form button:hover {
+  background: var(--sage);
+  color: #0c1a12;
+}
+
+/* Footer */
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* Settings Drawer */
+[hidden] {
+  display: none !important;
+}
+
+#settings-panel {
+  padding: 16px;
+}
+
+.settings-heading {
+  margin-bottom: 14px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.setting-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-mid);
+}
+
+.setting-label output {
+  color: var(--sage-light);
+  font-weight: 700;
+}
+
+/* Modern Pill Checkbox */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--bg-well);
+  border: 1px solid var(--border-medium);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--sage);
+  border-color: var(--sage);
+}
+
+input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #0b1a11;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Sleek Minimal Slider */
+input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-well);
+  margin: 6px 0 14px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sage-light);
+  border: 2px solid var(--bg-surface);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.settings-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.settings-actions button {
+  width: 100%;
+}
+
+.settings-note {
+  color: var(--text-muted);
+  font-size: 10.5px;
+  line-height: 1.5;
+  margin: 12px 0;
+  background: var(--bg-well);
+  padding: 9px 11px;
+  border-radius: 10px;
+  border-left: 2px solid var(--sage);
+}
+
+.back-button {
+  margin-top: 10px;
+  width: 100%;
+}
