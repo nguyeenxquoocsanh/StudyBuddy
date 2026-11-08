@@ -126,16 +126,36 @@ function addMessage(author,text,classname='') {
   $('chat-log').append(p);
   $('chat-log').scrollTop=$('chat-log').scrollHeight;
 }
-function respond(text){
-  const lower=text.toLowerCase();
-  if(lower.includes('plan')) return 'Try 20 minutes reading, 5 minutes recall, then a short break.';
-  if(lower.includes('tired')||lower.includes('break'))return 'A short rest, water, and a stretch may help you refocus.';
-  if(lower.includes('study')||lower.includes('focus'))return 'Choose one specific task. Start the timer, then work on that task only.';
-  return 'Pick one small next step and give it a try.';
+async function askBuddy(text) {
+  const response = await fetch('http://localhost:8000/chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({message: text})
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.detail || 'AI request failed.');
+  return result.reply;
 }
-$('chat-form').addEventListener('submit',event=>{
+$('chat-form').addEventListener('submit',async event=>{
   event.preventDefault();const text=$('chat-input').value.trim();if(!text)return;
-  addMessage('You',text,'you');$('chat-input').value='';addMessage('Buddy',respond(text));
+  addMessage('You',text,'you');$('chat-input').value='';
+  const submitButton=$('chat-form').querySelector('button');
+  submitButton.disabled=true;
+  addMessage('Buddy','Thinking...');
+  try {
+    const reply=await askBuddy(text);
+    const thinking=[...$('chat-log').querySelectorAll('p')].find(p=>p.textContent==='Buddy Thinking...');
+    if(thinking)thinking.remove();
+    addMessage('Buddy',reply);
+  } catch(error) {
+    const message = error.message === 'Failed to fetch'
+      ? 'I cannot reach the AI server. Make sure FastAPI is running.'
+      : `The AI service returned an error: ${error.message}`;
+    addMessage('Buddy',message);
+    console.error(error);
+  } finally {
+    submitButton.disabled=false;
+  }
 });
 document.addEventListener('keydown',event=>{
   if(event.code!=='Space'||event.target.closest('input,button,textarea')||settingsOpen)return;

@@ -22,6 +22,6 @@ The Chrome extension retains your custom sprite mascot, health, drag & drop, ani
 Disable any previous StudyBuddy extension to avoid multiple mascots. For preserving an existing extension's storage, replace its unpacked files **in the same folder** and click Reload instead of loading a separate folder.
 
 ## Notes
-- No remote servers, tracking or AI service; the Buddy chat provides scripted study prompts.
+- Buddy Chat can connect to the local FastAPI Gemini service; keep `GEMINI_API_KEY` in the server process environment.
 - If Chrome sleeps or suspends a tab, the timer is based on its stored deadline and catches up when resumed.
 - Browser-only mascot: Chrome extensions cannot draw outside Chrome webpages.
